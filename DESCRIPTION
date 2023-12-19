@@ -11,3 +11,9 @@ URL: https://github.com/James-Reynolds/gtfssupplyindex
 BugReports: https://github.com/James-Reynolds/gtfssupplyindex/issues
 RoxygenNote: 7.2.3
 Roxygen: list(markdown = TRUE)
+Imports: 
+    dplyr,
+    lubridate
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

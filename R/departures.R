@@ -6,70 +6,48 @@
 #' @param start_as_hms A character string describing the start time of the period of interest, timezone local to the gtfs files.
 #' @param end_as_hms A character string describing the end time of the period of interest, timezone local to the gtfs files.
 #'
-#' @return
-#' @export
+#' @return A number.
 #'
 #' @examples
 
 library(tidyverse)
 library(tidytransit)
 
+#' @export
 departures <- function(gtfs = gtfs,
                                stop_ids = stop_ids,
                                date_as_ymd = date_as_ymd,
-                               start_as_hms = hms("-1:0:0"),
-                               end_as_hms = hms("48:00:00")) {
+                               start_as_hms = lubridate::hms("-1:0:0"),
+                               end_as_hms = lubridate::hms("48:00:00")) {
 
 #This is based on the tidytransit vignette on producing a departure timetable at https://r-transit.github.io/tidytransit/articles/timetable.html
 #Trips departing from stop-----------------------------------
 #Join to the selected stop_ids the trip columns: route_id, service_id, trip_headsign, and trip_origin. Because stop_ids and trips are linked via the stop_times data frame, we do this by joining the stop_ids we’ve selected to the stop_times data frame and then to the trips data frame.
 
 departures <- stop_ids %>%
-  inner_join(gtfs$stop_times %>%
-               select(trip_id, arrival_time,
+  dplyr::inner_join(gtfs$stop_times %>%
+               dplyr::select(trip_id, arrival_time,
                       departure_time, stop_id),
              by = "stop_id")
 
 departures <- departures %>%
-  left_join(gtfs$trips %>%
-              select(trip_id, route_id,
+  dplyr::left_join(gtfs$trips %>%
+              dplyr::select(trip_id, route_id,
                      service_id),
             by = "trip_id")
 
 #Extract a single day--------------------------------
 services_on_date <- gtfs$.$dates_services %>%
-  filter(date == date_as_ymd) %>% select(service_id)
+  dplyr::filter(date == date_as_ymd) %>% dplyr::select(service_id)
 
 departures_on_date <- departures %>%
-  inner_join(services_on_date, by = "service_id")
+  dplyr::inner_join(services_on_date, by = "service_id")
 
 #return count of number of rows in departures_on_date dataframe between the start and end times
 nrow(departures_on_date %>%
-    filter(departure_time >= start_hms) %>%
-    filter(departure_time < end_hms)
+    dplyr::filter(departure_time >= start_hms) %>%
+    dplyr::filter(departure_time < end_hms)
   )
 }
 
 
-
-#Read  test data------------------------------------
-#We use a feed from the New York Metropolitan Transportation Authority. It is provided as a sample feed with tidytransit but you can read it directly from the MTA’s website.
-local_gtfs_path <- system.file("extdata", "google_transit_nyc_subway.zip", package = "tidytransit")
-gtfs <- read_gtfs(local_gtfs_path)
-
-#To create a departure timetable, we first need to find the ids of all stops in the stops table with the same same name, as stop_name might cover different platforms and thus have multiple stop_ids in the stops table.
-stop_ids <- gtfs$stops %>%
-  filter(stop_name == "Times Sq - 42 St") %>%
-  select(stop_id)
-#Note that multiple unrelated stops can have the same stop_name, see cluster_stops() for examples how to find these cases
-
-date_as_ymd <- "2018-08-23"
-start_hms <- hms("7:00:00")
-end_hms <- hms("7:10:00")
-
-
-departures(gtfs = gtfs,
-           stop_ids = stop_ids,
-           date_as_ymd = date_as_ymd,
-           start_as_hms = start_hms,
-           end_as_hms = end_hms)
