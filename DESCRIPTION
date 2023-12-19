@@ -1,13 +1,13 @@
 Package: gtfssupplyindex
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Calculates The Transit Supply Index Based On GTFS and SF Data 
+Version: 0.0.0.9000
+Authors@R: person("James", "Reynolds", email = "julianjamesreynolds@gmail.com", role = c("aut", "cre"))
+Description: Tools associated with calculating the Transit Supply Index as per Graham Currie and Zed Senbergs. Identifying spatial gaps in public transport provision for socially disadvantaged Australians: the Melbourne needs-gap study, 2007, Australasian Transport Research Forum (ATRF)
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 URL: https://github.com/James-Reynolds/gtfssupplyindex
 BugReports: https://github.com/James-Reynolds/gtfssupplyindex/issues
+RoxygenNote: 7.2.3
+Roxygen: list(markdown = TRUE)
