@@ -134,7 +134,21 @@ Tidytransit includes a GTFS feed from New York's MTA as a sample feed, and so th
 ## Code
 Details of the developed code are available in the documentation on github [@gtfssupplyindex_github]. The code development involved: 
 
-- adapting the @tidytransit_departure_timetable code to create a function (departures.R) that takes in a 
+- expanding on the GTFS database structure to develop one to support the SI calculation
+- adapting the @tidytransit_departure_timetable code to create a function (departures.R) that takes in a GTFS feed, stop name, date, start time and end time to output a number representing the number of departures.
+
+<TO DO>
+
+- create similar arrivals.R function
+- finish drawing the ERD in lucid.app
+- then do all the other functions needed
+
+
+```{r fig-fullwidth, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram. Source: adapted by author from Alamri et al (2023).", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+knitr::include_graphics("graphics/SI_data_structure.png")
+
+```
+
 
 
 
