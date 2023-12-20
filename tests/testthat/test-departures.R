@@ -2,7 +2,7 @@ test_that("tidytransit NYC departures", {
   # Read  test data------------------------------------
   # We use a feed from the New York Metropolitan Transportation Authority. It is provided as a sample feed with tidytransit but you can read it directly from the MTA’s website.
   local_gtfs_path <- system.file("extdata", "google_transit_nyc_subway.zip", package = "tidytransit")
-  gtfs <- read_gtfs(local_gtfs_path)
+  gtfs <- tidytransit::read_gtfs(local_gtfs_path)
 
   # To create a departure timetable, we first need to find the ids of all stops in the stops table with the same same name, as stop_name might cover different platforms and thus have multiple stop_ids in the stops table.
   stop_ids <- gtfs$stops %>%
