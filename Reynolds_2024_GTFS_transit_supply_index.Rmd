@@ -256,7 +256,7 @@ and @UITP:2015aa;
 undertaken yearly by the Transport Strategy Centre, 
 which includes over 100 transit providers around the world [@Imperial-College-London:2023aa]; and
 (4) a recently developed methodology to calculate 'blank spots' within an area, 
-being those places beyond 400/800 metre walking distances to/from bus and tram stops/train stations@AlamriSultan2023GAoA. 
+being those places beyond 400/800 metre walking distances to/from bus and tram stops/train stations [@AlamriSultan2023GAoA]. 
   
   
 The Fielding Triangle [@FieldingGordonJ1987Mpts] provides a framework 
@@ -422,7 +422,7 @@ and a given period of time;
 Currie and Senbergs (2007) this was based on 
 a radius of 400 metres for bus and tram stops, 
 and 800 metres for railway stations;
-(3) $Area_area$ is the area of the area of interest; and
+(3) $Area_{area}$ is the area of the area of interest; and
 (4) $SL_{n,time}$ is the number of transit arrivals for each stop 
 for a given time period.
 
@@ -505,7 +505,7 @@ Details of the developed code are available
 in the documentation on github [@gtfssupplyindex_github]. 
 The code development involved: 
 (1) expanding on the GTFS database structure 
-to develop one to support the SI calculation
+to develop one to support the SI calculation;
 (2) adapting the @tidytransit_departure_timetable code 
 to create a function (departures.R) 
 that takes in a GTFS feed, 
@@ -513,19 +513,33 @@ stop name,
 date, 
 start time 
 and end time 
-to output a number representing the number of departures.
-<TO DO>
-(3) create similar arrivals.R function
-(4) finish drawing the ERD in lucid.app, 
-and (5) then do all the other functions needed
+to output a number representing the number of departures; 
+(3) then doing all the other functions needed; 
+(4) testing; 
+(5) validation, 
+as discussed in the following
+
+### Database structure
+Calculating the SI for a GTFS feed and set of areas of interest is effectively a database problem. The database structure developed in this study is shown in the below Entity Relationship Diagram (ERD). 
 
 
-```{r fig-fullwidth, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram. Source: adapted by author from Alamri et al (2023).", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+```{r fig-fullwidth, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram. Source: adapted by author from Alamri et al (2023) and the GTFS Schedule Reference (16/11/2023 revision).", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 knitr::include_graphics("graphics/SI_data_structure.png")
 
 ```
 
+Each box represents a database table, with table rows indicating the variables (columns) included in each^[For example, each record in the 'stops' table includes a value for stop_id, stop_name, stop_lat and stop_lon.]. Relationships between the tables are indicated by the connecting lines, and Primary Key (PK) and Foreign Key (FK) designations^[For example, stop_id also appears in the 'stop_times' table as a Primary Key and Foreign Key.]. `Crow's feet' indicate the relationships between each table^[See https://i.stack.imgur.com/fxaAq.png for guide to the symbols. But, for example, the stops table is required, with the stop_id field providing a unique (primary) key for every stop. Within the stop_times table (which is also required) the stop_id field is a foreign key. Each unique stop_id can appear many times in the stop_times table, but must appear only once in the stops table. In the stop_times table each combination of trip_id, stop_id and arrival time must be unique (But, see note 2!) meaning that these fields represent a composite key.]
 
+The upper part of the ERD shows the GTFS structure, which remains unchanged.  Below this are the additional tables developed for the purposes of calculating the SI for each area of interest. The desired end result (bottom right) is the si_by_area_day_and_hour, which will report the SI score for each hour and date.  
+
+As discussed above, the SI is addative, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[Because individual modes may have different buffer distances.] for individual periods of time. 
+
+
+### Functions
+
+### Testing
+
+### Validation
 
 
 ## Melbourne, Victoria
