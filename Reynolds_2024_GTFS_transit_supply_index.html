@@ -12,7 +12,7 @@
 
 <meta name="author" content="James Reynolds" />
 
-<meta name="date" content="2023-12-20" />
+<meta name="date" content="2024-01-02" />
 
 <title>Leveraging GTFS data to assess transit supply</title>
 
@@ -113,7 +113,7 @@ margin-left: 2em;
 
 <h1 class="title toc-ignore">Leveraging GTFS data to assess transit supply</h1>
 <h4 class="author">James Reynolds</h4>
-<h4 class="date">2023-12-20</h4>
+<h4 class="date">2024-01-02</h4>
 
 
 
@@ -134,35 +134,345 @@ header-includes:
 --->
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>While “if you can’t measure it, you can’t manage it” is often miss-attributed, and actually the opposite of what <span class="citation">Deming (<label for="tufte-mn-1" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-1" class="margin-toggle">1993<span class="marginnote">Deming, W Edwards. 1993. <span>“The New Economics for Industry, Government, Education.”</span> MIT Press.</span>)</span> said <span class="citation">(<label for="tufte-mn-2" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-2" class="margin-toggle">Berenson 2016<span class="marginnote">Berenson, Robert A. 2016. <span>“<span class="nocase">If You Can’t Measure Performance, Can You Improve It?</span>”</span> <em>JAMA</em> 315 (7): 645–46. <a href="https://doi.org/10.1001/jama.2016.0767">https://doi.org/10.1001/jama.2016.0767</a>.</span>)</span>, service level indicators are an important part of researching, managing and seeking to improve transit operations<span class="citation">(<label for="tufte-mn-3" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-3" class="margin-toggle">Fielding 1987<span class="marginnote">Fielding, Gordon J. 1987. <em>Managing Public Transit Strategically : A Comprehensive Approach to Strengthening Service and Monitoring Performance</em>. 1st ed. Jossey-Bass Public Administration Series. San Francisco: Jossey-Bass Publishers.</span>; <label for="tufte-mn-4" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-4" class="margin-toggle">Ryus et al. 2003<span class="marginnote">Ryus, Paul, M Connor, S Corbett, A Rodenstein, L Wargelin, L Ferreira, Y Nakanishi, and K Blume. 2003. <span>“TCRP Report 88: A Guidebook for Developing a Transit Performance-Measurement System.”</span> Transit Cooperative Research Program.</span>)</span>. A wide range of indicators already exist. Examples include those in the Transit Capacity and Quality of Service Manual (TCQSM)<span class="citation">(<label for="tufte-mn-5" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-5" class="margin-toggle">Kittleson &amp; Associates et al. 2013<span class="marginnote">Kittleson &amp; Associates, Parsons Brinckerhoff, KFH Group, Texas A&amp;M Transportation Institute, and ARUP. 2013. <em>Transit Capacity and Quality of Service Manual, Third Edition</em>. Third Edition, TCRP Report 165. Washington DC: Transportation Research Board; Transportation Research Board. <a href="http://www.trb.org/Main/Blurbs/169437.aspx">http://www.trb.org/Main/Blurbs/169437.aspx</a>.</span>)</span>, the Transit Score metric <span class="citation">(<label for="tufte-mn-6" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-6" class="margin-toggle">Walk Score 2023<span class="marginnote">Walk Score. 2023. <span>“Transit Score Methodology.”</span> <a href="https://www.walkscore.com/transit-score-methodology.shtml">https://www.walkscore.com/transit-score-methodology.shtml</a>.</span>)</span> and many more.</p>
-<p>Practitioners, researchers and advocates seeking to use such metrics may face two inter-related challenges: firstly, there is the problem of calculating the metrics themselves for a specific location and service pattern; secondly, is the challenge of explaining the metrics, their meaning and importance those who are not specialists in transit, such as politicians or the general public<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> Of the examples above, the metrics in the TCQSM appear difficult to calculate in practice and there are a multitude of indicators, yet there is an entire guidebook explaining them; while, in contrast, Transit Scores can be obtained simply by typing an address into a website, but cannot be calculated independently and lack a detailed (and open source) description of the methodolgy / algorithm.</span>. However, a relatively simple transit Supply Index (SI) has been previous developed <span class="citation">(<label for="tufte-mn-7" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-7" class="margin-toggle">Currie and Senbergs 2007<span class="marginnote">Currie, Graham, and Zed Senbergs. 2007. <span>“<span class="nocase">Identifying spatial gaps in public transport provision for socially disadvantaged Australians: the Melbourne needs-gap study</span>.”</span> Australasian Transport Research Forum.</span>)</span>, which reduces service levels to a single score. This SI score is obtained by calculating the number of transit arrivals at stops within an area of interest, with an adjustment made to account for the typical walk-access catchment for each stop. Hence, higher SI scores indicate areas with higher frequency and/or better coverage.</p>
-<p>Unfortunately, the SI does not appear to have been widely used, perhaps in part because at the time it was first published timetable data not typically publicaly available in a standardized and machine-readable format. Currie and Senbergs (2007) reported SI scores for metropolitan Melbourne, with these calculated directly from a database of services provided by the transit authority. However, the database was in a format specific to Melbourne and the agency itself, and so if SI scores for a different location were desired<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> Or perhaps even for Melbourne again, but at a different time given that the database format has likely changed and the Currie and Senbergs (2007) analysis algorithms are not readily available.</span> considerable work would be required to wrangle the data and calculate scores.</p>
-<p>Fortunately, since the widespread adoption of the General Transit Feed Specification (GTFS), timetable data and tools for processing it are now more widely available in standardised formats. More than 10,000 agencies are now providing GTFS feeds<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> There are two forms: GTFS-static consisting of the timetable data (the scheduled services); and GTFS-realtime, which includes vehicle arrivals and departure times based on real-world position data. This paper and project involves only the GTFS-static (timetable) format.</span><span class="citation">(<label for="tufte-mn-8" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-8" class="margin-toggle">MobilityData undated<span class="marginnote">MobilityData. undated. <em><span>General Transit Feed Specification (GTFS)</span></em>. <a href="{https://gtfs.org/}">{https://gtfs.org/}</a>.</span>)</span>, suggesting that the development of code to calculate SI scores directly from GTFS might allow the SI to be used more widely in research and practice. Previous work undertake by Monash University’s Public Transport Research Group (PRTG), available on Github <span class="citation">(<label for="tufte-mn-9" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-9" class="margin-toggle">Reynolds 2023<span class="marginnote">Reynolds, James. 2023. <span>“Transit_supply_index_GTFS.”</span> <a href="https://github.com/James-Reynolds/Transit_Supply_Index_GTFS">https://github.com/James-Reynolds/Transit_Supply_Index_GTFS</a>.</span>)</span>,developed R functions to calculate SI scores from the Victorian PTV GTFS feed. However, the code was inefficient and untidy, and only allowed scores to be calculated for a whole day of transit service.</p>
-<p>More recently, PTRG has commenced a project which requires SI scores by hour of the day. Unfortunately, the current code does not have this capability, and major changes will be needed to calculate stop arrivals on an hourly, ratehr than daily, basis. However, this also provides an opportunity to revise and improve the code so that it is more readily available, usable and understandable for others, and quicker such that the calculations are completed within a short period of time<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> To calculate SI scores for the Victorian GTFS feed would take the original code base approximately as long as it the service delivery itself took - SI scores fora whole week of transit service would take a whole week to compute!</span>.</p>
-<p>This document reports the development of code to calculate SI scores from GTFS dataset as an R package<span class="citation">(<label for="tufte-mn-10" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-10" class="margin-toggle">Reynolds 2024<span class="marginnote">Reynolds, James. 2024. <span>“Gtfssupplyindex.”</span> <a href="https://github.com/James-Reynolds/gtfssupplyindex">https://github.com/James-Reynolds/gtfssupplyindex</a>.</span>)</span>. Structuring the code as an R package<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> Rather than as scripts within a R Markdown file, as for the original Transit_Supply_Index_GTFS efforts</span> provides various advantages as far as standardised conventions, accessibility and sharing, testing and so on <span class="citation">(<label for="tufte-mn-11" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-11" class="margin-toggle">Wickham and Bryan 2023<span class="marginnote">Wickham, Hadley, and Jennifer Bryan. 2023. <em>R Packages</em>. &quot; O’Reilly Media, Inc.&quot;. <a href="https://r-pkgs.org/">https://r-pkgs.org/</a>.</span>)</span>. More broadly the motivation for this research is to better understand how GTFS data might be used to produce benchmarking metrics that can be calculated using open-source code. Such metrics might then be able to be used to access proposed network changes without the need for specialist software or analysis<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> More formally, the (null) hypothesis tested in this research is that the Supply Index cannot be calculated directly from a GTFS feed.</span>. A related objective is to increase the availability of metrics that are relatively easy to understand and use when making decisions about or advocating for changes to existing services, including for those who may not be technical specialists in transit planning and scheduling.</p>
-<p>This rest of this document is structured as follows: the next section discusses the research context of transit metrics and the the Supply Index. In the third section the methodology for the code development is outlined, including discussion of the case studies GTFS feeds used to test and verify the code output. In the fourth section results are presented, including SI scores for SA1s across Greater Melbourne on an hour-by-hour basis. Results are then discussed, followed by a brief conclusion that includes the identification of directions for future research.</p>
+<p>“If you can’t measure it, you can’t manage it”
+is often miss-attributed to <span class="citation">Deming (<label for="tufte-mn-1" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-1" class="margin-toggle">1993<span class="marginnote">Deming, W Edwards. 1993. <span>“The New Economics for Industry, Government, Education.”</span> MIT Press.</span>)</span>
+who,
+according to <span class="citation">Berenson (<label for="tufte-mn-2" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-2" class="margin-toggle">2016<span class="marginnote">Berenson, Robert A. 2016. <span>“<span class="nocase">If You Can’t Measure Performance, Can You Improve It?</span>”</span> <em>JAMA</em> 315 (7): 645–46. <a href="https://doi.org/10.1001/jama.2016.0767">https://doi.org/10.1001/jama.2016.0767</a>.</span>)</span>,
+was actually trying to make the opposite point.
+Regardless,
+service level indicators
+are an important part of
+researching,
+managing
+and seeking to improve transit operations
+<span class="citation">(<label for="tufte-mn-3" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-3" class="margin-toggle">Fielding 1987<span class="marginnote">Fielding, Gordon J. 1987. <em>Managing Public Transit Strategically : A Comprehensive Approach to Strengthening Service and Monitoring Performance</em>. 1st ed. Jossey-Bass Public Administration Series. San Francisco: Jossey-Bass Publishers.</span>; <label for="tufte-mn-4" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-4" class="margin-toggle">Ryus et al. 2003<span class="marginnote">Ryus, Paul, M Connor, S Corbett, A Rodenstein, L Wargelin, L Ferreira, Y Nakanishi, and K Blume. 2003. <span>“TCRP Report 88: A Guidebook for Developing a Transit Performance-Measurement System.”</span> Transit Cooperative Research Program.</span>)</span>.
+A wide range of indicators already exist.
+Examples include:
+those in the Transit Capacity and Quality of Service Manual (TCQSM)<span class="citation">(<label for="tufte-mn-5" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-5" class="margin-toggle">Kittleson &amp; Associates et al. 2013<span class="marginnote">Kittleson &amp; Associates, Parsons Brinckerhoff, KFH Group, Texas A&amp;M Transportation Institute, and ARUP. 2013. <em>Transit Capacity and Quality of Service Manual, Third Edition</em>. Third Edition, TCRP Report 165. Washington DC: Transportation Research Board; Transportation Research Board. <a href="http://www.trb.org/Main/Blurbs/169437.aspx">http://www.trb.org/Main/Blurbs/169437.aspx</a>.</span>)</span>,
+the Transit Score metric <span class="citation">(<label for="tufte-mn-6" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-6" class="margin-toggle">Walk Score 2023<span class="marginnote">Walk Score. 2023. <span>“Transit Score Methodology.”</span> <a href="https://www.walkscore.com/transit-score-methodology.shtml">https://www.walkscore.com/transit-score-methodology.shtml</a>.</span>)</span>
+and many more.</p>
+<p>Practitioners,
+researchers
+and advocates
+seeking to use such metrics
+may face two inter-related challenges:</p>
+<ul>
+<li>firstly,
+there is the problem of calculating the metrics themselves
+for a specific location
+and service pattern;</li>
+<li>secondly,
+is the challenge of explaining the metrics,
+their meaning
+and importance
+to those who are not specialists in transit,
+such as to politicians
+or the general public
+<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> Of the examples above,
+the metrics in the TCQSM appear:
+difficult to calculate in practice,
+and difficult to explain
+because there are a multitude of indicators
+(although there is an entire guidebook explaining them, which might help somewhat);
+while,
+in contrast,
+Transit Scores can be obtained
+simply by typing an address into a website,
+but cannot be calculated independently
+and lack a detailed
+(and open source)
+description of the methodolgy / algorithm.</span>.
+However,
+a relatively simple transit Supply Index (SI)
+has been previous developed <span class="citation">(<label for="tufte-mn-7" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-7" class="margin-toggle">Currie and Senbergs 2007<span class="marginnote">Currie, Graham, and Zed Senbergs. 2007. <span>“<span class="nocase">Identifying spatial gaps in public transport provision for socially disadvantaged Australians: the Melbourne needs-gap study</span>.”</span> Australasian Transport Research Forum.</span>)</span>,
+This reduces service levels to a single score
+(like the Transit Score),
+but is open
+and can be independently calculated by anyone.
+It is obtained by calculating
+the number of transit arrivals
+at stops within an area of interest,
+with an adjustment made to account for the typical walk-access catchment for each stop.
+Hence,
+higher SI scores indicate
+areas with higher frequency
+and/or better coverage.</li>
+</ul>
+<p>Unfortunately,
+the SI does not appear to have been widely used,
+perhaps in part because at the time it was first published
+timetable data was not typically publicly available
+in a standardized
+and machine-readable format.
+The scores reported in Currie and Senbergs (2007)
+has been calculated directly from a database of services
+provided by the transit authority
+in Melbourne, Australia.
+However, this database appears to have been
+in a format specific to Victoria
+and the agency itself^[Public Transport Victoria (PTV)},
+and so if SI scores for a different location were desired<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> Or perhaps even for Melbourne again,
+but at a different time
+given that the database format has likely changed
+and the Currie and Senbergs (2007) analysis algorithms are not readily available.</span>
+considerable work would be required to wrangle the data and calculate scores.</p>
+<p>However,
+since the widespread adoption
+of the General Transit Feed Specification (GTFS),
+timetable data
+and tools for processing it
+are now much more widely available
+than they were in 2007.
+More than 10,000 agencies
+are now providing GTFS feeds<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> There are two forms:
+GTFS-static consisting of the timetable data (the scheduled services);
+and GTFS-realtime, which includes vehicle arrivals and departure times based on real-world position data.
+This paper and project uses only the GTFS-static (timetable) format.</span><span class="citation">(<label for="tufte-mn-8" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-8" class="margin-toggle">MobilityData undated<span class="marginnote">MobilityData. undated. <em><span>General Transit Feed Specification (GTFS)</span></em>. <a href="{https://gtfs.org/}">{https://gtfs.org/}</a>.</span>)</span>,
+suggesting that the development of code
+to calculate SI scores directly from GTFS
+might allow it to be used more widely
+in research and practice.<br />
+Previous work undertaken
+by Monash University’s Public Transport Research Group (PRTG),
+available on Github <span class="citation">(<label for="tufte-mn-9" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-9" class="margin-toggle">Reynolds 2023<span class="marginnote">Reynolds, James. 2023. <span>“Transit_supply_index_GTFS.”</span> <a href="https://github.com/James-Reynolds/Transit_Supply_Index_GTFS">https://github.com/James-Reynolds/Transit_Supply_Index_GTFS</a>.</span>)</span>,
+developed R functions to calculate SI scores
+from the Victorian PTV GTFS feed.
+However,
+the code was inefficient<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> 
+To calculate SI scores for the Victorian GTFS feed
+would take the original code base approximately as long as it the service delivery itself took
+i.e. (SI scores fora whole week of transit service would take a whole week to compute!).</span>
+and untidy,
+and only allowed scores to be calculated for a whole day of transit service.</p>
+<p>More recently,
+PTRG has commenced a project which requires SI scores by hour of the day.
+Unfortunately,
+the current code does not have this capability,
+and major changes will be needed to calculate stop arrivals on an hourly, rather than daily, basis.
+However,
+this also provides an opportunity to revise and improve the code
+so that it is more readily accessible,
+usable and
+understandable for others,
+and quicker.</p>
+<p>This document reports
+the development of code to calculate SI scores
+from GTFS datasets
+as an R package<span class="citation">(<label for="tufte-mn-10" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-10" class="margin-toggle">Reynolds 2024<span class="marginnote">Reynolds, James. 2024. <span>“Gtfssupplyindex.”</span> <a href="https://github.com/James-Reynolds/gtfssupplyindex">https://github.com/James-Reynolds/gtfssupplyindex</a>.</span>)</span>.
+Structuring the code as an R package<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> 
+Rather than as scripts within a R Markdown file,
+as for the original Transit_Supply_Index_GTFS efforts</span>
+provides various advantages as far as
+adhering to standardised conventions,
+accessibility and sharing,
+testing
+and so on <span class="citation">(<label for="tufte-mn-11" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-11" class="margin-toggle">Wickham and Bryan 2023<span class="marginnote">Wickham, Hadley, and Jennifer Bryan. 2023. <em>R Packages</em>. &quot; O’Reilly Media, Inc.&quot;. <a href="https://r-pkgs.org/">https://r-pkgs.org/</a>.</span>)</span>.
+More broadly,
+the motivation for this research is
+to better understand how GTFS data might be used
+to produce benchmarking metrics that can be calculated using open-source code.
+Such metrics might then be able to be used
+to assess proposed network changes
+or other analyses
+without the need for specialist software
+or bespoke calculation<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> 
+More formally,
+the (null) hypothesis tested in this research is
+that the Supply Index cannot be calculated directly from a GTFS feed.</span>.
+A related objective is
+to increase the availability of metrics that are relatively easy to understand and use
+when making decisions about
+or advocating for changes to existing services,
+including for those who may not
+be technical specialists
+in transit planning and scheduling.</p>
+<p>The rest of this document
+is structured as follows:
+the next section discusses the research context
+of transit metrics
+and the the Supply Index.
+In the third section
+the methodology adopted for the code development is outlined,
+including discussion of the case studies
+(GTFS feeds)
+used to test and verify the code output.
+In the fourth section
+results are presented,
+including SI scores for SA1s across Greater Melbourne on an hour-by-hour basis.
+Results are then discussed,
+followed by a brief conclusion
+that includes the identification of directions for future research.</p>
 </div>
 <div id="research-context" class="section level1">
 <h1>Research context</h1>
-<p>Even a brief search shows that there is a very large number of metrics available for benchmarking transit services, for example:</p>
+<p>Even a brief search shows
+that there is a very large number of metrics
+available for benchmarking transit services.
+Examples include:</p>
 <ul>
-<li>the Transit Cooperative Research Program (TCRP) Report 88 provides an extensive guidebook on developing a performance-measurement system <span class="citation">(<label for="tufte-mn-12" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-12" class="margin-toggle">Ryus et al. 2003<span class="marginnote">Ryus, Paul, M Connor, S Corbett, A Rodenstein, L Wargelin, L Ferreira, Y Nakanishi, and K Blume. 2003. <span>“TCRP Report 88: A Guidebook for Developing a Transit Performance-Measurement System.”</span> Transit Cooperative Research Program.</span>)</span>;</li>
-<li>online databases are provided by the Florida Transit Information System (FTIS) <span class="citation">(<label for="tufte-mn-13" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-13" class="margin-toggle">Florida Transit Information System 2018<span class="marginnote">Florida Transit Information System. 2018. <span>“Urban Integrated National Transit Database.”</span> <a href="http://www.ftis.org/urban_intd.aspx">http://www.ftis.org/urban_intd.aspx</a>.</span>)</span> and <span class="citation">International Association of Public Transport (UITP) (<label for="tufte-mn-14" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-14" class="margin-toggle">2015<span class="marginnote">International Association of Public Transport (UITP). 2015. <span>“Mobility in Cities Database 2015.”</span> Brussels, Belgium. <a href="https://uitp.org/publications/mobility-in-cities-database/">uitp.org/publications/mobility-in-cities-database/</a>.</span>)</span>;</li>
-<li>the Transport Strategy Centre runs extensive annual benchmarking programmes across over 100 transit providers around the world <span class="citation">(<label for="tufte-mn-15" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-15" class="margin-toggle">Imperial College London undated<span class="marginnote">Imperial College London. undated. <span>“Transport Strategy Centre (TSC); Applied Research.”</span> undated. <a href="https://www.imperial.ac.uk/transport-engineering/transport-strategy-centre/applied-research/">https://www.imperial.ac.uk/transport-engineering/transport-strategy-centre/applied-research/</a>.</span>)</span>; and</li>
-<li><span class="citation">Alamri et al. (<label for="tufte-mn-16" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-16" class="margin-toggle">2023<span class="marginnote">Alamri, Sultan, Kiki Adhinugraha, Nasser Allheeib, and David Taniar. 2023. <span>“GIS Analysis of Adequate Accessibility to Public Transportation in Metropolitan Areas.”</span> <em>ISPRS International Journal of Geo-Information</em> 12 (5): 180.</span>)</span> recently developed a methodology based around the number of ‘blank spots’ within an area, being those places beyond 400/800 metre walking distances to/from bus and tram stops/train stations.</li>
+<li>those in the Transit Cooperative Research Program (TCRP) Report 88, which is an extensive guidebook on developing a performance-measurement system <span class="citation">(<label for="tufte-mn-12" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-12" class="margin-toggle">Ryus et al. 2003<span class="marginnote">Ryus, Paul, M Connor, S Corbett, A Rodenstein, L Wargelin, L Ferreira, Y Nakanishi, and K Blume. 2003. <span>“TCRP Report 88: A Guidebook for Developing a Transit Performance-Measurement System.”</span> Transit Cooperative Research Program.</span>)</span>;</li>
+<li>online databases provided by
+the Florida Transit Information System (FTIS) <span class="citation">(<label for="tufte-mn-13" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-13" class="margin-toggle">Florida Transit Information System 2018<span class="marginnote">Florida Transit Information System. 2018. <span>“Urban Integrated National Transit Database.”</span> <a href="http://www.ftis.org/urban_intd.aspx">http://www.ftis.org/urban_intd.aspx</a>.</span>)</span>
+and <span class="citation">International Association of Public Transport (UITP) (<label for="tufte-mn-14" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-14" class="margin-toggle">2015<span class="marginnote">International Association of Public Transport (UITP). 2015. <span>“Mobility in Cities Database 2015.”</span> Brussels, Belgium. <a href="https://uitp.org/publications/mobility-in-cities-database/">uitp.org/publications/mobility-in-cities-database/</a>.</span>)</span>;</li>
+<li>those used in the extensive annual benchmarking programme
+undertaken yearly by the Transport Strategy Centre,
+which includes over 100 transit providers around the world <span class="citation">(<label for="tufte-mn-15" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-15" class="margin-toggle">Imperial College London undated<span class="marginnote">Imperial College London. undated. <span>“Transport Strategy Centre (TSC); Applied Research.”</span> undated. <a href="https://www.imperial.ac.uk/transport-engineering/transport-strategy-centre/applied-research/">https://www.imperial.ac.uk/transport-engineering/transport-strategy-centre/applied-research/</a>.</span>)</span>; and</li>
+<li>a recently developed methodology to calculate ‘blank spots’ within an area,
+being those places beyond 400/800 metre walking distances to/from bus and tram stops/train <a href="mailto:stations@AlamriSultan2023GAoA" class="email">stations@AlamriSultan2023GAoA</a>.</li>
 </ul>
-<p>The Fielding Triangle <span class="citation">(<label for="tufte-mn-17" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-17" class="margin-toggle">Fielding 1987<span class="marginnote">Fielding, Gordon J. 1987. <em>Managing Public Transit Strategically : A Comprehensive Approach to Strengthening Service and Monitoring Performance</em>. 1st ed. Jossey-Bass Public Administration Series. San Francisco: Jossey-Bass Publishers.</span>)</span> provides a framework for understanding how such metrics combine service inputs, service outputs and service consumption to describe cost efficiency, cost effectiveness or service effectiveness measures. At a larger scale, <span class="citation">Litman (<label for="tufte-mn-18" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-18" class="margin-toggle">2003<span class="marginnote">Litman, Todd. 2003. <span>“Measuring Transportation: Traffic, Mobility and Accessibility.”</span> 10. Vol. 73. Institute of Transportation Engineers. ITE Journal. Washington, D.C.: Institute of Transportation Engineers.</span>)</span> and <span class="citation">Litman (<label for="tufte-mn-19" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-19" class="margin-toggle">2016<span class="marginnote">Litman, Todd. 2016. <span>“When Are Bus Lanes Warranted? Considering Economic Efficiency, Social Equity and Strategic Planning Goals.”</span> Victoria Transport Policy Institute. <a href="http://www.vtpi.org/blw.pdf">http://www.vtpi.org/blw.pdf</a>.</span>)</span> discuss some of the traffic, mobility, accessibility, social equity, strategic planning and other rational decision-making frames that might underlie such transit metrics, while <span class="citation">Reynolds et al. (<label for="tufte-mn-20" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-20" class="margin-toggle">2017<span class="marginnote">Reynolds, James, Graham Currie, Geoff Rose, and Alistair Cumming. 2017. <span>“Moving Beyond Techno-Rationalism: New Models of Transit Priority Implementation.”</span> In <em>Australasian Transport Research Forum 2017</em>. Auckland, New Zealand.</span>)</span> extends this into models of how institutionalism, incrementalism and other public policy models might apply to decision-making processes. Further examples are provided by <span class="citation">Guzman, Oviedo, and Rivera (<label for="tufte-mn-21" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-21" class="margin-toggle">2017<span class="marginnote">Guzman, Luis A., Daniel Oviedo, and Carlos Rivera. 2017. <span>“Assessing Equity in Transport Accessibility to Work and Study: The Bogotá Region.”</span> <em>Journal of Transport Geography</em> 58: 236–46.</span>)</span>, who develop a measure of accessibility in the context of policy development and social equity for Latin American Bus Rapid Transit (BRT) based networks, and the street space allocation metrics based around 10 ethical principles introduced by <span class="citation">Creutzig et al. (<label for="tufte-mn-22" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-22" class="margin-toggle">2020<span class="marginnote">Creutzig, Felix, Aneeque Javaid, Zakia Soomauroo, Steffen Lohrey, Nikola Milojevic-Dupont, Anjali Ramakrishnan, Mahendra Sethi, et al. 2020. <span>“Fair Street Space Allocation: Ethical Principles and Empirical Insights.”</span> <em>Transport Reviews</em> 40 (6): 711–33. <a href="https://doi.org/10.1080/01441647.2020.1762795">https://doi.org/10.1080/01441647.2020.1762795</a>.</span>)</span>.</p>
-<p>However, many of these metrics appear difficult to calculate, complex to explain or understand, and likely not well suited to communication with those who are not transit planners or engineers, or otherwise technical specialists. Where pre-calculated metrics are immediately available it may not be possible for practitioners, researchers or advocates to independently generate metrics for proposed system changes or to even know exactly how scores for the existing services levels are calculated. For example, Transit Scores are readily available on a website that shows scores for locations with a published GTFS feed, eliminating the need for any calculations. The meaning of the Transit Score appears easy to explain, as the highest possible score of 100 represents what might be experienced in the centre of New York<span class="citation">(<label for="tufte-mn-23" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-23" class="margin-toggle">Walk Score 2023<span class="marginnote">Walk Score. 2023. <span>“Transit Score Methodology.”</span> <a href="https://www.walkscore.com/transit-score-methodology.shtml">https://www.walkscore.com/transit-score-methodology.shtml</a>.</span>)</span>]. However, the TransitScore algorithm is patented and effectively a black box, meaning that it is not possible to calculate scores independently or understand how the metric might change with alteration to the transit system or services, or the surrounding environment. TransitScore, therefore fails the first of the aforementioned challenges; in that practitioners, researchers and advocates can only use those scores provided by <span class="citation">Walk Score (<label for="tufte-mn-24" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-24" class="margin-toggle">2023<span class="marginnote">Walk Score. 2023. <span>“Transit Score Methodology.”</span> <a href="https://www.walkscore.com/transit-score-methodology.shtml">https://www.walkscore.com/transit-score-methodology.shtml</a>.</span>)</span>, rather than being able to calculate scores independently. (the closer to 100, the better), but as the score is calculated by a patented algorithm it may not be easy to understand or explain the connection between real-world conditions and the score, or what might need to be done to improve the score and service levels. Nor does it appear to be possible for Transit Scores to be generated for proposed changes to networks. Another example is the TCQSM, which specifies Levels of Service (LOS) between A and F across a range of factors<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> Including service span, frequency, speed, the proportion of the population serviced, competitiveness of travel times to car-based travel, and many more.</span>. This scoring scheme appears relatively simple to explain<label for="tufte-sn-8" class="margin-toggle sidenote-number">8</label><input type="checkbox" id="tufte-sn-8" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">8</span> A is good and F is bad. Also this scoring system matches to the A to F LOS scoring used in many traffic capacity analysis software and manuals.</span>, and the detail within <span class="citation">Kittleson &amp; Associates et al. (<label for="tufte-mn-25" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-25" class="margin-toggle">2013<span class="marginnote">Kittleson &amp; Associates, Parsons Brinckerhoff, KFH Group, Texas A&amp;M Transportation Institute, and ARUP. 2013. <em>Transit Capacity and Quality of Service Manual, Third Edition</em>. Third Edition, TCRP Report 165. Washington DC: Transportation Research Board; Transportation Research Board. <a href="http://www.trb.org/Main/Blurbs/169437.aspx">http://www.trb.org/Main/Blurbs/169437.aspx</a>.</span>)</span> provides a resource for anyone wanting to better understand what the scores mean. However, calculation of many of TCQSM metrics may need specialised software and datasets<label for="tufte-sn-9" class="margin-toggle sidenote-number">9</label><input type="checkbox" id="tufte-sn-9" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">9</span> For example, the Service Coverage Area metric in the TCQSM (pp. 5-8 to 5-21) may require GIS or other analysis, on top of accurate data about population densities, stop locations and service schedules.</span> and it might be challenging to explain the detail of these measures or how to improve them to non-technical decision-makers, stakeholders or others involved in transit management or advocacy.</p>
-<p>The introduction of the General Transit Feed Specification (GTFS) and widespread release of schedule data in this format, however, has helped towards making transit metrics more broadly available and useable. GTFS is an open, text-based format that was developed originally to allow transit information to be included in the Google Maps navigation platform <span class="citation">(<label for="tufte-mn-26" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-26" class="margin-toggle">MobilityData undated<span class="marginnote">MobilityData. undated. <em><span>General Transit Feed Specification (GTFS)</span></em>. <a href="{https://gtfs.org/}">{https://gtfs.org/}</a>.</span>)</span>, although provides a mechanism for including individual transit systems in many online products and analysises, including the Transit Score metric itself. <span class="citation">Wong (<label for="tufte-mn-27" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-27" class="margin-toggle">2013<span class="marginnote">Wong, James. 2013. <span>“Leveraging the General Transit Feed Specification for Efficient Transit Analysis.”</span> <em>Transportation Research Record</em> 1 (2338): 11–19. <a href="https://doi.org/10.3141/2338-02">https://doi.org/10.3141/2338-02</a>.</span>)</span> provides another example, having developed code to calculate of some of the TCQSM metrics<label for="tufte-sn-10" class="margin-toggle sidenote-number">10</label><input type="checkbox" id="tufte-sn-10" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">10</span> Daily average headways, route length and stop numbers for 50 transit operators.</span> directly from GTFS feed data. While the <span class="citation">Wong (<label for="tufte-mn-28" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-28" class="margin-toggle">2013<span class="marginnote">Wong, James. 2013. <span>“Leveraging the General Transit Feed Specification for Efficient Transit Analysis.”</span> <em>Transportation Research Record</em> 1 (2338): 11–19. <a href="https://doi.org/10.3141/2338-02">https://doi.org/10.3141/2338-02</a>.</span>)</span> open-source code for calculating some TCQSM metrics is readily available<label for="tufte-sn-11" class="margin-toggle sidenote-number">11</label><input type="checkbox" id="tufte-sn-11" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">11</span> <a href="https://github.com/jcwong86/GTFS_Explore_Tool" class="uri">https://github.com/jcwong86/GTFS_Explore_Tool</a></span> this is now 11 years old and does not appear to be currently maintained. Future research may involve reviewing this code and using it to analyse modern GTFS feeds. However, in this paper the aim is more modest, being to use GTFS data to calculate Currie and Senbergs’ (2007) SI.</p>
+<p>The Fielding Triangle <span class="citation">(<label for="tufte-mn-16" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-16" class="margin-toggle">Fielding 1987<span class="marginnote">Fielding, Gordon J. 1987. <em>Managing Public Transit Strategically : A Comprehensive Approach to Strengthening Service and Monitoring Performance</em>. 1st ed. Jossey-Bass Public Administration Series. San Francisco: Jossey-Bass Publishers.</span>)</span> provides a framework
+for understanding how such metrics combine
+service inputs,
+service outputs
+and service consumption
+to describe cost efficiency,
+cost effectiveness
+or service effectiveness.
+At a larger scale,
+<span class="citation">Litman (<label for="tufte-mn-17" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-17" class="margin-toggle">2003<span class="marginnote">Litman, Todd. 2003. <span>“Measuring Transportation: Traffic, Mobility and Accessibility.”</span> 10. Vol. 73. Institute of Transportation Engineers. ITE Journal. Washington, D.C.: Institute of Transportation Engineers.</span>)</span>
+and <span class="citation">Litman (<label for="tufte-mn-18" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-18" class="margin-toggle">2016<span class="marginnote">Litman, Todd. 2016. <span>“When Are Bus Lanes Warranted? Considering Economic Efficiency, Social Equity and Strategic Planning Goals.”</span> Victoria Transport Policy Institute. <a href="http://www.vtpi.org/blw.pdf">http://www.vtpi.org/blw.pdf</a>.</span>)</span>
+discuss some of the traffic,
+mobility,
+accessibility,
+social equity,
+strategic planning
+and other rational decision-making frames
+that might underlie such transit metrics,
+while <span class="citation">Reynolds et al. (<label for="tufte-mn-19" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-19" class="margin-toggle">2017<span class="marginnote">Reynolds, James, Graham Currie, Geoff Rose, and Alistair Cumming. 2017. <span>“Moving Beyond Techno-Rationalism: New Models of Transit Priority Implementation.”</span> In <em>Australasian Transport Research Forum 2017</em>. Auckland, New Zealand.</span>)</span> extends this into models of how
+institutionalism,
+incrementalism
+and other public policy models
+might apply to decision-making processes.
+Further examples include:</p>
+<ul>
+<li><span class="citation">Guzman, Oviedo, and Rivera (<label for="tufte-mn-20" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-20" class="margin-toggle">2017<span class="marginnote">Guzman, Luis A., Daniel Oviedo, and Carlos Rivera. 2017. <span>“Assessing Equity in Transport Accessibility to Work and Study: The Bogotá Region.”</span> <em>Journal of Transport Geography</em> 58: 236–46.</span>)</span>,
+who develop a measure of accessibility
+in the context of policy development
+and social equity
+for Latin American Bus Rapid Transit (BRT) based networks; and
+-the street space allocation metrics
+based around 10 ethical principles
+introduced by <span class="citation">Creutzig et al. (<label for="tufte-mn-21" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-21" class="margin-toggle">2020<span class="marginnote">Creutzig, Felix, Aneeque Javaid, Zakia Soomauroo, Steffen Lohrey, Nikola Milojevic-Dupont, Anjali Ramakrishnan, Mahendra Sethi, et al. 2020. <span>“Fair Street Space Allocation: Ethical Principles and Empirical Insights.”</span> <em>Transport Reviews</em> 40 (6): 711–33. <a href="https://doi.org/10.1080/01441647.2020.1762795">https://doi.org/10.1080/01441647.2020.1762795</a>.</span>)</span>.</li>
+</ul>
+<p>However,
+many of these metrics appear difficult to calculate,
+complex to explain or understand,
+and likely not well suited to communication
+with those who are not transit planners or engineers, or otherwise technical specialists.
+Where pre-calculated metrics
+are immediately available
+it may not be possible for practitioners,
+researchers
+or advocates
+to independently generate metrics for proposed system changes
+or to even know exactly how scores for the existing services levels are calculated.
+For example,
+Transit Scores
+for locations with a published GTFS feed
+are readily available on a website,
+eliminating the need for any calculations.
+The meaning of these Transit Scores
+appears easy to explain,
+as the highest possible score of 100
+represents what might be experienced in the centre of New York<span class="citation">(<label for="tufte-mn-22" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-22" class="margin-toggle">Walk Score 2023<span class="marginnote">Walk Score. 2023. <span>“Transit Score Methodology.”</span> <a href="https://www.walkscore.com/transit-score-methodology.shtml">https://www.walkscore.com/transit-score-methodology.shtml</a>.</span>)</span>].
+However,
+the Transit Score algorithm
+is patented
+and effectively a black box.
+It is not possible to calculate scores independently
+or understand how the metric might change
+with alteration to the transit system or services,
+or the surrounding environment.
+Transit Score, therefore,
+fails the first of the aforementioned challenges,
+as practitioners, researchers and advocates
+can only use those scores provided by <span class="citation">Walk Score (<label for="tufte-mn-23" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-23" class="margin-toggle">2023<span class="marginnote">Walk Score. 2023. <span>“Transit Score Methodology.”</span> <a href="https://www.walkscore.com/transit-score-methodology.shtml">https://www.walkscore.com/transit-score-methodology.shtml</a>.</span>)</span>
+While the metric is simple to explain,
+as the closer to 100, the better,
+because it is based on
+a patented algorithm it may not be easy to understand or explain
+the connection between real-world conditions
+and the Transit Score,
+or what might need to be done
+to improve the score and service levels.
+Nor does it appear to be possible
+for Transit Scores to be generated for proposed changes to networks.</p>
+<p>Another example is the TCQSM,
+which specifies Levels of Service (LOS) between A and F
+across a range of factors<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> 
+Including service span,
+frequency,
+speed,
+the proportion of the population serviced,
+competitiveness of travel times to car-based travel,
+and many more.</span>.
+This scoring scheme appears relatively simple to explain<label for="tufte-sn-8" class="margin-toggle sidenote-number">8</label><input type="checkbox" id="tufte-sn-8" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">8</span> 
+A is good and F is bad.
+Also this scoring system matches the A to F LOS scoring used in many traffic capacity analysis software and manuals.</span>,
+and the detail within <span class="citation">Kittleson &amp; Associates et al. (<label for="tufte-mn-24" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-24" class="margin-toggle">2013<span class="marginnote">Kittleson &amp; Associates, Parsons Brinckerhoff, KFH Group, Texas A&amp;M Transportation Institute, and ARUP. 2013. <em>Transit Capacity and Quality of Service Manual, Third Edition</em>. Third Edition, TCRP Report 165. Washington DC: Transportation Research Board; Transportation Research Board. <a href="http://www.trb.org/Main/Blurbs/169437.aspx">http://www.trb.org/Main/Blurbs/169437.aspx</a>.</span>)</span>
+provides a resource for anyone wanting to better understand what the scores mean.
+However,
+calculation of many of TCQSM metrics may need specialised software
+and datasets<label for="tufte-sn-9" class="margin-toggle sidenote-number">9</label><input type="checkbox" id="tufte-sn-9" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">9</span> 
+For example,
+the Service Coverage Area metric in the TCQSM (pp. 5-8 to 5-21)
+may require GIS or other analysis,
+on top of accurate data about population densities,
+stop locations
+and service schedules.</span>
+and it might be challenging to explain
+the detail of these measures
+or how to improve them
+to non-technical decision-makers,
+stakeholders
+or others involved in transit management or advocacy.</p>
+<p>The introduction of the General Transit Feed Specification (GTFS)
+and widespread release of schedule data in this format,
+however,
+has helped towards making transit metrics more broadly available and useable.
+GTFS is an open,
+text-based format
+that was developed originally to allow transit information to be included in the Google Maps navigation platform <span class="citation">(<label for="tufte-mn-25" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-25" class="margin-toggle">MobilityData undated<span class="marginnote">MobilityData. undated. <em><span>General Transit Feed Specification (GTFS)</span></em>. <a href="{https://gtfs.org/}">{https://gtfs.org/}</a>.</span>)</span>,
+It now provides a mechanism
+for including individual transit systems
+in many online products and analyseses,
+including the Transit Score metric itself.
+<span class="citation">Wong (<label for="tufte-mn-26" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-26" class="margin-toggle">2013<span class="marginnote">Wong, James. 2013. <span>“Leveraging the General Transit Feed Specification for Efficient Transit Analysis.”</span> <em>Transportation Research Record</em> 1 (2338): 11–19. <a href="https://doi.org/10.3141/2338-02">https://doi.org/10.3141/2338-02</a>.</span>)</span> provides another example of what can be done with GTFS data,
+having developed code to calculate of some of the TCQSM metrics<label for="tufte-sn-10" class="margin-toggle sidenote-number">10</label><input type="checkbox" id="tufte-sn-10" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">10</span> 
+Daily average headways,
+route length
+and stop numbers
+for 50 transit operators.</span>.
+While the <span class="citation">Wong (<label for="tufte-mn-27" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-27" class="margin-toggle">2013<span class="marginnote">Wong, James. 2013. <span>“Leveraging the General Transit Feed Specification for Efficient Transit Analysis.”</span> <em>Transportation Research Record</em> 1 (2338): 11–19. <a href="https://doi.org/10.3141/2338-02">https://doi.org/10.3141/2338-02</a>.</span>)</span> open-source code is readily available<label for="tufte-sn-11" class="margin-toggle sidenote-number">11</label><input type="checkbox" id="tufte-sn-11" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">11</span> 
+<a href="https://github.com/jcwong86/GTFS_Explore_Tool" class="uri">https://github.com/jcwong86/GTFS_Explore_Tool</a></span>
+this is now 11 years old
+and does not appear to be currently maintained.
+Future research may involve
+reviewing this code
+and using it to analyse modern GTFS feeds.
+However,
+in this paper the aim is more modest,
+being to use GTFS data to calculate Currie and Senbergs’ (2007) SI.</p>
 <div id="the-suppy-index" class="section level2">
 <h2>The Suppy Index</h2>
-<p><label for="tufte-mn-29" class="margin-toggle">⊕</label><input type="checkbox" id="tufte-mn-29" class="margin-toggle"><span class="marginnote"><span style="display: block;"><span class="math display"><span class="math display">\[\begin{equation}
+<p><label for="tufte-mn-28" class="margin-toggle">⊕</label><input type="checkbox" id="tufte-mn-28" class="margin-toggle"><span class="marginnote"><span style="display: block;"><span class="math display"><span class="math display">\[\begin{equation}
   SI_{area, time} = \sum{\frac{Area_{Bn}}{Area_{area}}*SL_{n, time}}
   \end{equation}\]</span></span></span></span></p>
-<p>The Supply Index (SI) equation is shown in the margin figure<label for="tufte-sn-12" class="margin-toggle sidenote-number">12</label><input type="checkbox" id="tufte-sn-12" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">12</span> Minor adjustments have been made to generalise the equation, as Currie and Senbergs (2007) focus was the context of Melbourne’s Census Collection Districts (CCD) and calculations based on a week of transit service. CCDs predate the introduction of Statistical Areas 1, 2, 3, and 4 (SA1, SA2, SA3, SA4), and other geographical divisions currently used by the Australian Bureau of Statistics (ABS), which may be more familiar to readers.</span>, in which:</p>
+<p>The Supply Index (SI) equation
+is shown in the margin figure<label for="tufte-sn-12" class="margin-toggle sidenote-number">12</label><input type="checkbox" id="tufte-sn-12" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">12</span> 
+Minor adjustments have been made
+to generalise the equation,
+as Currie and Senbergs (2007) focus was the context of Melbourne’s Census Collection Districts (CCD)
+and calculations based on a week of transit service.
+CCDs predate the introduction of Statistical Areas 1, 2, 3, and 4 (SA1, SA2, SA3, SA4), and other geographical divisions
+currently used by the Australian Bureau of Statistics (ABS),
+which may be more familiar to readers.</span>,
+in which:</p>
 <ul>
-<li><span class="math inline">\(SI_{area, time}\)</span> is the Supply Index for the area of interest and a given period of time;</li>
-<li><span class="math inline">\(Area_{Bn}\)</span> is the buffer area for each stop (n) within the area of interest. In Currie and Senbergs (2007) this was based on a radius of 400 metres for bus and tram stops, and 800 metres for railway stations;</li>
+<li><span class="math inline">\(SI_{area, time}\)</span> is the Supply Index for the area of interest
+and a given period of time;</li>
+<li><span class="math inline">\(Area_{Bn}\)</span> is the buffer area for each stop (n) within the area of interest. In<br />
+Currie and Senbergs (2007) this was based on a radius of 400 metres for bus and tram stops, and 800 metres for railway stations;</li>
 <li><span class="math inline">\(Area_area\)</span> is the area of the area of interest; and</li>
 <li><span class="math inline">\(SL_{n,time}\)</span> is the number of transit arrivals for each stop for a given time period.</li>
 </ul>
@@ -170,22 +480,22 @@ header-includes:
 </div>
 <div id="r-and-packages" class="section level2">
 <h2>R and packages</h2>
-<p>R <span class="citation">(<label for="tufte-mn-30" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-30" class="margin-toggle">R Core Team 2023<span class="marginnote">R Core Team. 2023. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.</span>)</span> is a widely used statistical programming language. The GTFS-related packages gtfstools<span class="citation">(<label for="tufte-mn-31" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-31" class="margin-toggle">Daniel Herszenhut et al. 2022<span class="marginnote">Herszenhut, Daniel, Rafael H. M. Pereira, Pedro R. Andrade, and Joao Bazzo. 2022. <em>Gtfstools: General Transit Feed Specification (GTFS) Editing and Analysing Tools</em>. <a href="https://ipeagit.github.io/gtfstools/">https://ipeagit.github.io/gtfstools/</a>.</span>)</span> and tidytransit<span class="citation">(<label for="tufte-mn-32" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-32" class="margin-toggle">Poletti et al. 2023<span class="marginnote">Poletti, Flavio, Daniel Herszenhut, Mark Padgham, Tom Buckley, and Danton Noriega-Goodwin. 2023. <em>Tidytransit: Read, Validate, Analyze, and Map GTFS Feeds</em>. <a href="https://github.com/r-transit/tidytransit">https://github.com/r-transit/tidytransit</a>.</span>)</span> are already available<label for="tufte-sn-13" class="margin-toggle sidenote-number">13</label><input type="checkbox" id="tufte-sn-13" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">13</span> tidytransit is licensed under GPL-2 | GPL-3, while gtfstools is lincensed under the more permissive MIT license. For simplicity, the gtfssupplyindex package developed here is licensed under GPL-3 so as to match tidytransit.</span>. As such, this study aimed to expand on these and build a new package including functions useful for calculating the SI, as discussed in the following section.</p>
+<p>R <span class="citation">(<label for="tufte-mn-29" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-29" class="margin-toggle">R Core Team 2023<span class="marginnote">R Core Team. 2023. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.</span>)</span> is a widely used statistical programming language. The GTFS-related packages gtfstools<span class="citation">(<label for="tufte-mn-30" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-30" class="margin-toggle">Daniel Herszenhut et al. 2022<span class="marginnote">Herszenhut, Daniel, Rafael H. M. Pereira, Pedro R. Andrade, and Joao Bazzo. 2022. <em>Gtfstools: General Transit Feed Specification (GTFS) Editing and Analysing Tools</em>. <a href="https://ipeagit.github.io/gtfstools/">https://ipeagit.github.io/gtfstools/</a>.</span>)</span> and tidytransit<span class="citation">(<label for="tufte-mn-31" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-31" class="margin-toggle">Poletti et al. 2023<span class="marginnote">Poletti, Flavio, Daniel Herszenhut, Mark Padgham, Tom Buckley, and Danton Noriega-Goodwin. 2023. <em>Tidytransit: Read, Validate, Analyze, and Map GTFS Feeds</em>. <a href="https://github.com/r-transit/tidytransit">https://github.com/r-transit/tidytransit</a>.</span>)</span> are already available<label for="tufte-sn-13" class="margin-toggle sidenote-number">13</label><input type="checkbox" id="tufte-sn-13" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">13</span> tidytransit is licensed under GPL-2 | GPL-3, while gtfstools is lincensed under the more permissive MIT license. For simplicity, the gtfssupplyindex package developed here is licensed under GPL-3 so as to match tidytransit.</span>. As such, this study aimed to expand on these and build a new package including functions useful for calculating the SI, as discussed in the following section.</p>
 </div>
 </div>
 <div id="methodology" class="section level1">
 <h1>Methodology</h1>
-<p>The package development setup and workflow described by <span class="citation">Wickham and Bryan (<label for="tufte-mn-33" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-33" class="margin-toggle">2023<span class="marginnote">Wickham, Hadley, and Jennifer Bryan. 2023. <em>R Packages</em>. &quot; O’Reilly Media, Inc.&quot;. <a href="https://r-pkgs.org/">https://r-pkgs.org/</a>.</span>)</span> was adopted in this study. Existing packages were relied upon including: the sf package <span class="citation">(<label for="tufte-mn-34" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-34" class="margin-toggle">Pebesma 2023<span class="marginnote">Pebesma, Edzer. 2023. <em>Sf: Simple Features for r</em>. <a href="https://r-spatial.github.io/sf/">https://r-spatial.github.io/sf/</a>.</span>)</span> for geospatial analysis; the tidyverse <span class="citation">(<label for="tufte-mn-35" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-35" class="margin-toggle">Wickham et al. 2019<span class="marginnote">Wickham, Hadley, Mara Averick, Jennifer Bryan, Winston Chang, Lucy D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019. <span>“Welcome to the <span class="nocase">tidyverse</span>.”</span> <em>Journal of Open Source Software</em> 4 (43): 1686. <a href="https://doi.org/10.21105/joss.01686">https://doi.org/10.21105/joss.01686</a>.</span>)</span> and many others. Some code was adapted from the tidytransit, gtfstools and other package’s examples, vignettes and other documentation <span class="citation">(<label for="tufte-mn-36" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-36" class="margin-toggle">Poletti undated<span class="marginnote">Poletti, Flavio. undated. <em>Tidytransit: Generate a Departure Timetable</em>. <a href="https://r-transit.github.io/tidytransit/articles/timetable.html">https://r-transit.github.io/tidytransit/articles/timetable.html</a>.</span>; <label for="tufte-mn-37" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-37" class="margin-toggle">Danile Herszenhut et al. undated<span class="marginnote">Herszenhut, Danile, Rafael H. M. Pereira, Pedro R. Andrade, and Joao Bazzo. undated. <em>Gtfstools; Filter GTFS Object by Route Type (Transport Mode)</em>. <a href="https://ipeagit.github.io/gtfstools/reference/filter_by_route_type.html">https://ipeagit.github.io/gtfstools/reference/filter_by_route_type.html</a>.</span>)</span>.</p>
-<p>Tidytransit includes a GTFS feed from New York’s MTA as a sample feed, and so this is used for code tests were appropriate. Larger scale testing was performed using the Victorian GTFS feed, published by Public Transport Victoria (PTV), sourced via <span class="citation">Transit Mobility Data, (<label for="tufte-mn-38" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-38" class="margin-toggle">2023<span class="marginnote">Transit Mobility Data,. 2023. <span>“PTV GTFS - OpenMobilityData.”</span> 2023. <a href="https://transitfeeds.com/p/ptv/497">https://transitfeeds.com/p/ptv/497</a>.</span>)</span> for historical feeds. ABS data was also used, primarily through the strayr and absmapsdata packages <span class="citation">(<label for="tufte-mn-39" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-39" class="margin-toggle">Mackey et al. 2023<span class="marginnote">Mackey, Will, Matt Johnson, David Diviny, Matt Cowgill, Bryce Roney, William Lai, and Benjamin Wee. 2023. <span>“Strayr.”</span> <a href="https://runapp-aus.github.io/strayr/">https://runapp-aus.github.io/strayr/</a>.</span>)</span></p>
+<p>The package development setup and workflow described by <span class="citation">Wickham and Bryan (<label for="tufte-mn-32" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-32" class="margin-toggle">2023<span class="marginnote">Wickham, Hadley, and Jennifer Bryan. 2023. <em>R Packages</em>. &quot; O’Reilly Media, Inc.&quot;. <a href="https://r-pkgs.org/">https://r-pkgs.org/</a>.</span>)</span> was adopted in this study. Existing packages were relied upon including: the sf package <span class="citation">(<label for="tufte-mn-33" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-33" class="margin-toggle">Pebesma 2023<span class="marginnote">Pebesma, Edzer. 2023. <em>Sf: Simple Features for r</em>. <a href="https://r-spatial.github.io/sf/">https://r-spatial.github.io/sf/</a>.</span>)</span> for geospatial analysis; the tidyverse <span class="citation">(<label for="tufte-mn-34" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-34" class="margin-toggle">Wickham et al. 2019<span class="marginnote">Wickham, Hadley, Mara Averick, Jennifer Bryan, Winston Chang, Lucy D’Agostino McGowan, Romain François, Garrett Grolemund, et al. 2019. <span>“Welcome to the <span class="nocase">tidyverse</span>.”</span> <em>Journal of Open Source Software</em> 4 (43): 1686. <a href="https://doi.org/10.21105/joss.01686">https://doi.org/10.21105/joss.01686</a>.</span>)</span> and many others. Some code was adapted from the tidytransit, gtfstools and other package’s examples, vignettes and other documentation <span class="citation">(<label for="tufte-mn-35" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-35" class="margin-toggle">Poletti undated<span class="marginnote">Poletti, Flavio. undated. <em>Tidytransit: Generate a Departure Timetable</em>. <a href="https://r-transit.github.io/tidytransit/articles/timetable.html">https://r-transit.github.io/tidytransit/articles/timetable.html</a>.</span>; <label for="tufte-mn-36" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-36" class="margin-toggle">Danile Herszenhut et al. undated<span class="marginnote">Herszenhut, Danile, Rafael H. M. Pereira, Pedro R. Andrade, and Joao Bazzo. undated. <em>Gtfstools; Filter GTFS Object by Route Type (Transport Mode)</em>. <a href="https://ipeagit.github.io/gtfstools/reference/filter_by_route_type.html">https://ipeagit.github.io/gtfstools/reference/filter_by_route_type.html</a>.</span>)</span>.</p>
+<p>Tidytransit includes a GTFS feed from New York’s MTA as a sample feed, and so this is used for code tests were appropriate. Larger scale testing was performed using the Victorian GTFS feed, published by Public Transport Victoria (PTV), sourced via <span class="citation">Transit Mobility Data, (<label for="tufte-mn-37" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-37" class="margin-toggle">2023<span class="marginnote">Transit Mobility Data,. 2023. <span>“PTV GTFS - OpenMobilityData.”</span> 2023. <a href="https://transitfeeds.com/p/ptv/497">https://transitfeeds.com/p/ptv/497</a>.</span>)</span> for historical feeds. ABS data was also used, primarily through the strayr and absmapsdata packages <span class="citation">(<label for="tufte-mn-38" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-38" class="margin-toggle">Mackey et al. 2023<span class="marginnote">Mackey, Will, Matt Johnson, David Diviny, Matt Cowgill, Bryce Roney, William Lai, and Benjamin Wee. 2023. <span>“Strayr.”</span> <a href="https://runapp-aus.github.io/strayr/">https://runapp-aus.github.io/strayr/</a>.</span>)</span></p>
 </div>
 <div id="results" class="section level1">
 <h1>Results</h1>
 <div id="code" class="section level2">
 <h2>Code</h2>
-<p>Details of the developed code are available in the documentation on github <span class="citation">(<label for="tufte-mn-40" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-40" class="margin-toggle">Reynolds 2024<span class="marginnote">Reynolds, James. 2024. <span>“Gtfssupplyindex.”</span> <a href="https://github.com/James-Reynolds/gtfssupplyindex">https://github.com/James-Reynolds/gtfssupplyindex</a>.</span>)</span>. The code development involved:</p>
+<p>Details of the developed code are available in the documentation on github <span class="citation">(<label for="tufte-mn-39" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-39" class="margin-toggle">Reynolds 2024<span class="marginnote">Reynolds, James. 2024. <span>“Gtfssupplyindex.”</span> <a href="https://github.com/James-Reynolds/gtfssupplyindex">https://github.com/James-Reynolds/gtfssupplyindex</a>.</span>)</span>. The code development involved:</p>
 <ul>
 <li>expanding on the GTFS database structure to develop one to support the SI calculation</li>
-<li>adapting the <span class="citation">Poletti (<label for="tufte-mn-41" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-41" class="margin-toggle">undated<span class="marginnote">Poletti, Flavio. undated. <em>Tidytransit: Generate a Departure Timetable</em>. <a href="https://r-transit.github.io/tidytransit/articles/timetable.html">https://r-transit.github.io/tidytransit/articles/timetable.html</a>.</span>)</span> code to create a function (departures.R) that takes in a GTFS feed, stop name, date, start time and end time to output a number representing the number of departures.</li>
+<li>adapting the <span class="citation">Poletti (<label for="tufte-mn-40" class="margin-toggle">&#8853;</label><input type="checkbox" id="tufte-mn-40" class="margin-toggle">undated<span class="marginnote">Poletti, Flavio. undated. <em>Tidytransit: Generate a Departure Timetable</em>. <a href="https://r-transit.github.io/tidytransit/articles/timetable.html">https://r-transit.github.io/tidytransit/articles/timetable.html</a>.</span>)</span> code to create a function (departures.R) that takes in a GTFS feed, stop name, date, start time and end time to output a number representing the number of departures.</li>
 </ul>
 <p><TO DO></p>
 <ul>

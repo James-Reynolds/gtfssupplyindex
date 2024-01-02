@@ -68,36 +68,334 @@ library(dplyr)
 ```
 
 # Introduction
-While "if you can't measure it, you can't manage it" is often miss-attributed, and actually the opposite of what @Deming1993new said [@Berenson2016], service level indicators are an important part of researching, managing and seeking to improve transit operations[@FieldingGordonJ1987Mpts; @Ryus:2003aa]. A wide range of indicators already exist. Examples include those in the Transit Capacity and Quality of Service Manual (TCQSM)[@TCQSM:2013], the Transit Score metric [@WalkScore:2023tg] and many more.
+"If you can't measure it, you can't manage it" 
+is often miss-attributed to @Deming1993new 
+who, 
+according to @Berenson2016, 
+was actually trying to make the opposite point. 
+Regardless, 
+service level indicators 
+are an important part of 
+researching, 
+managing 
+and seeking to improve transit operations 
+[@FieldingGordonJ1987Mpts; @Ryus:2003aa]. 
+A wide range of indicators already exist. 
+Examples include: 
+those in the Transit Capacity and Quality of Service Manual (TCQSM)[@TCQSM:2013], 
+the Transit Score metric [@WalkScore:2023tg] 
+and many more.
 
-Practitioners, researchers and advocates seeking to use such metrics may face two inter-related challenges: firstly, there is the problem of calculating the metrics themselves for a specific location and service pattern; secondly, is the challenge of explaining the metrics, their meaning and importance those who are not specialists in transit, such as politicians or the general public^[Of the examples above, the metrics in the TCQSM appear difficult to calculate in practice and there are a multitude of indicators, yet there is an entire guidebook explaining them; while, in contrast, Transit Scores can be obtained simply by typing an address into a website, but cannot be calculated independently and lack a detailed (and open source) description of the methodolgy / algorithm.]. However, a relatively simple transit Supply Index (SI) has been previous developed [@currie2007identifying], which reduces service levels to a single score. This SI score is obtained by calculating the number of transit arrivals at stops within an area of interest, with an adjustment made to account for the typical walk-access catchment for each stop. Hence, higher SI scores indicate areas with higher frequency and/or better coverage. 
+Practitioners, 
+researchers 
+and advocates 
+seeking to use such metrics 
+may face two inter-related challenges: 
 
-Unfortunately, the SI does not appear to have been widely used, perhaps in part because at the time it was first published timetable data not typically publicaly available in a standardized and machine-readable format. Currie and Senbergs (2007) reported SI scores for metropolitan Melbourne, with these calculated directly from a database of services provided by the transit authority. However, the database was in a format specific to Melbourne and the agency itself, and so if SI scores for a different location were desired^[Or perhaps even for Melbourne again, but at a different time given that the database format has likely changed and the Currie and Senbergs (2007) analysis algorithms are not readily available.] considerable work would be required to wrangle the data and calculate scores.  
+- firstly, 
+there is the problem of calculating the metrics themselves 
+for a specific location 
+and service pattern; 
+- secondly, 
+is the challenge of explaining the metrics, 
+their meaning 
+and importance 
+to those who are not specialists in transit, 
+such as to politicians 
+or the general public
+^[Of the examples above, 
+the metrics in the TCQSM appear: 
+difficult to calculate in practice, 
+and difficult to explain 
+because there are a multitude of indicators 
+(although there is an entire guidebook explaining them, which might help somewhat); 
+while,
+in contrast, 
+Transit Scores can be obtained 
+simply by typing an address into a website, 
+but cannot be calculated independently 
+and lack a detailed 
+(and open source) 
+description of the methodolgy / algorithm.].
+However, 
+a relatively simple transit Supply Index (SI) 
+has been previous developed [@currie2007identifying], 
+This reduces service levels to a single score 
+(like the Transit Score), 
+but is open 
+and can be independently calculated by anyone.
+It is obtained by calculating 
+the number of transit arrivals 
+at stops within an area of interest, 
+with an adjustment made to account for the typical walk-access catchment for each stop. 
+Hence, 
+higher SI scores indicate 
+areas with higher frequency 
+and/or better coverage. 
 
-Fortunately, since the widespread adoption of the General Transit Feed Specification (GTFS), timetable data and tools for processing it are now more widely available in standardised formats. More than 10,000 agencies are now providing GTFS feeds^[There are two forms: GTFS-static consisting of the timetable data (the scheduled services); and GTFS-realtime, which includes vehicle arrivals and departure times based on real-world position data. This paper and project involves only the GTFS-static (timetable) format.][@GTFS], suggesting that the development of code to calculate SI scores directly from GTFS might allow the SI to be used more widely in research and practice.  Previous work undertake by Monash University's Public Transport Research Group (PRTG), available on Github [@SI_github],developed R functions to calculate SI scores from the Victorian PTV GTFS feed. However, the code was inefficient and untidy, and only allowed scores to be calculated for a whole day of transit service. 
+Unfortunately, 
+the SI does not appear to have been widely used, 
+perhaps in part because at the time it was first published 
+timetable data was not typically publicly available 
+in a standardized 
+and machine-readable format. 
+The scores reported in Currie and Senbergs (2007)
+has been calculated directly from a database of services 
+provided by the transit authority 
+in Melbourne, Australia. 
+However, this database appears to have been 
+in a format specific to Victoria 
+and the agency itself^[Public Transport Victoria (PTV)},
+and so if SI scores for a different location were desired^[Or perhaps even for Melbourne again, 
+but at a different time 
+given that the database format has likely changed 
+and the Currie and Senbergs (2007) analysis algorithms are not readily available.] 
+considerable work would be required to wrangle the data and calculate scores.  
 
-More recently, PTRG has commenced a project which requires SI scores by hour of the day. Unfortunately, the current code does not have this capability, and major changes will be needed to calculate stop arrivals on an hourly, ratehr than daily, basis. However, this also provides an opportunity to revise and improve the code so that it is more readily available, usable and understandable for others, and quicker such that the calculations are completed within a short period of time^[To calculate SI scores for the Victorian GTFS feed would take the original code base approximately as long as it the service delivery itself took - SI scores fora whole week of transit service would take a whole week to compute!]. 
+However, 
+since the widespread adoption 
+of the General Transit Feed Specification (GTFS), 
+timetable data 
+and tools for processing it 
+are now much more widely available 
+than they were in 2007.
+More than 10,000 agencies 
+are now providing GTFS feeds^[There are two forms: 
+GTFS-static consisting of the timetable data (the scheduled services); 
+and GTFS-realtime, which includes vehicle arrivals and departure times based on real-world position data. 
+This paper and project uses only the GTFS-static (timetable) format.][@GTFS],
+suggesting that the development of code 
+to calculate SI scores directly from GTFS 
+might allow it to be used more widely 
+in research and practice.  
+Previous work undertaken 
+by Monash University's Public Transport Research Group (PRTG), 
+available on Github [@SI_github], 
+developed R functions to calculate SI scores 
+from the Victorian PTV GTFS feed. 
+However, 
+the code was inefficient^[
+To calculate SI scores for the Victorian GTFS feed 
+would take the original code base approximately as long as it the service delivery itself took 
+i.e. (SI scores fora whole week of transit service would take a whole week to compute!).] 
+and untidy, 
+and only allowed scores to be calculated for a whole day of transit service. 
 
-This document reports the development of code to calculate SI scores from GTFS dataset as an R package[@gtfssupplyindex_github]. Structuring the code as an R package^[Rather than as scripts within a R Markdown file, as for the original Transit_Supply_Index_GTFS efforts] provides various advantages as far as standardised conventions, accessibility and sharing, testing and so on [@wickham2023r]. More broadly the motivation for this research is to better understand how GTFS data might be used to produce benchmarking metrics that can be calculated using open-source code. Such metrics might then be able to be used to access proposed network changes without the need for specialist software or analysis^[More formally, the (null) hypothesis tested in this research is that the Supply Index cannot be calculated directly from a GTFS feed.]. A related objective is to increase the availability of metrics that are relatively easy to understand and use when making decisions about or advocating for changes to existing services, including for those who may not be technical specialists in transit planning and scheduling. 
+More recently, 
+PTRG has commenced a project which requires SI scores by hour of the day. 
+Unfortunately, 
+the current code does not have this capability, 
+and major changes will be needed to calculate stop arrivals on an hourly, rather than daily, basis. 
+However, 
+this also provides an opportunity to revise and improve the code 
+so that it is more readily accessible, 
+usable and 
+understandable for others, 
+and quicker. 
 
-This rest of this document is structured as follows: the next section discusses the research context of transit metrics and the the Supply Index. In the third section the methodology for the code development is outlined, including discussion of the case studies GTFS feeds used to test and verify the code output. In the fourth section results are presented, including SI scores for SA1s across Greater Melbourne on an hour-by-hour basis. Results are then discussed, followed by a brief conclusion that includes the identification of directions for future research.  
+This document reports 
+the development of code to calculate SI scores 
+from GTFS datasets 
+as an R package[@gtfssupplyindex_github]. 
+Structuring the code as an R package^[
+Rather than as scripts within a R Markdown file, 
+as for the original Transit_Supply_Index_GTFS efforts] 
+provides various advantages as far as 
+adhering to standardised conventions, 
+accessibility and sharing, 
+testing 
+and so on [@wickham2023r]. 
+More broadly, 
+the motivation for this research is 
+to better understand how GTFS data might be used 
+to produce benchmarking metrics that can be calculated using open-source code. 
+Such metrics might then be able to be used 
+to assess proposed network changes 
+or other analyses 
+without the need for specialist software 
+or bespoke calculation^[
+More formally, 
+the (null) hypothesis tested in this research is 
+that the Supply Index cannot be calculated directly from a GTFS feed.]. 
+A related objective is 
+to increase the availability of metrics that are relatively easy to understand and use 
+when making decisions about 
+or advocating for changes to existing services, 
+including for those who may not 
+be technical specialists 
+in transit planning and scheduling. 
+
+The rest of this document 
+is structured as follows: 
+the next section discusses the research context 
+of transit metrics 
+and the the Supply Index. 
+In the third section 
+the methodology adopted for the code development is outlined, 
+including discussion of the case studies 
+(GTFS feeds) 
+used to test and verify the code output. 
+In the fourth section 
+results are presented, 
+including SI scores for SA1s across Greater Melbourne on an hour-by-hour basis. 
+Results are then discussed, 
+followed by a brief conclusion 
+that includes the identification of directions for future research.  
 
 
 # Research context
 
-Even a brief search shows that there is a very large number of metrics available for benchmarking transit services, for example: 
+Even a brief search shows 
+that there is a very large number of metrics 
+available for benchmarking transit services. 
+Examples include: 
 
-- the Transit Cooperative Research Program (TCRP) Report 88 provides an extensive guidebook on developing a performance-measurement system [@Ryus:2003aa]; 
-- online databases are provided by the Florida Transit Information System (FTIS) [@Florida-Transit-Information-System:2018aa] and @UITP:2015aa; 
-- the Transport Strategy Centre runs extensive annual benchmarking programmes across over 100 transit providers around the world [@Imperial-College-London:2023aa]; and
-- @AlamriSultan2023GAoA recently developed a methodology based around the number of 'blank spots' within an area, being those places beyond 400/800 metre walking distances to/from bus and tram stops/train stations. 
+- those in the Transit Cooperative Research Program (TCRP) Report 88, which is an extensive guidebook on developing a performance-measurement system [@Ryus:2003aa]; 
+- online databases provided by 
+the Florida Transit Information System (FTIS) [@Florida-Transit-Information-System:2018aa] 
+and @UITP:2015aa; 
+- those used in the extensive annual benchmarking programme 
+undertaken yearly by the Transport Strategy Centre, 
+which includes over 100 transit providers around the world [@Imperial-College-London:2023aa]; and
+- a recently developed methodology to calculate 'blank spots' within an area, 
+being those places beyond 400/800 metre walking distances to/from bus and tram stops/train stations@AlamriSultan2023GAoA. 
   
   
-The Fielding Triangle [@FieldingGordonJ1987Mpts] provides a framework for understanding how such metrics combine service inputs, service outputs and service consumption to describe cost efficiency, cost effectiveness or service effectiveness measures. At a larger scale, @Litman:2003ab and @Litman:2016aa discuss some of the traffic, mobility, accessibility, social equity, strategic planning and other rational decision-making frames that might underlie such transit metrics, while @Reynolds:2017ah extends this into models of how institutionalism, incrementalism and other public policy models might apply to decision-making processes. Further examples are provided by @GuzmanLuisA.2017Aeit, who develop a measure of accessibility in the context of policy development and social equity for Latin American Bus Rapid Transit (BRT) based networks,  and the street space allocation metrics based around 10 ethical principles introduced by @Creutzig2020streetspaceallocation. 
+The Fielding Triangle [@FieldingGordonJ1987Mpts] provides a framework 
+for understanding how such metrics combine 
+service inputs, 
+service outputs 
+and service consumption 
+to describe cost efficiency, 
+cost effectiveness 
+or service effectiveness. 
+At a larger scale, 
+@Litman:2003ab 
+and @Litman:2016aa 
+discuss some of the traffic, 
+mobility, 
+accessibility, 
+social equity, 
+strategic planning 
+and other rational decision-making frames 
+that might underlie such transit metrics, 
+while @Reynolds:2017ah extends this into models of how 
+institutionalism, 
+incrementalism 
+and other public policy models 
+might apply to decision-making processes. 
+Further examples include:
 
-However, many of these metrics appear difficult to calculate, complex to explain or understand, and likely not well suited to communication with those who are not transit planners or engineers, or otherwise technical specialists. Where pre-calculated metrics are immediately available it may not be possible for  practitioners, researchers or advocates to independently generate metrics for proposed system changes or to even know exactly how scores for the existing services levels are calculated. For example, Transit Scores are readily available on a website that shows scores for locations with a published GTFS feed, eliminating the need for any calculations. The meaning of the Transit Score appears easy to explain, as the highest possible score of 100 represents what might be experienced in the centre of New York[@WalkScore:2023tg]]. However, the TransitScore algorithm is patented and effectively a black box, meaning that it is not possible to calculate scores independently or understand how the metric might change with alteration to the transit system or services, or the surrounding environment. TransitScore, therefore fails the first of the aforementioned challenges; in that practitioners, researchers and advocates can only use those scores provided by @WalkScore:2023tg, rather than being able to calculate scores independently.  (the closer to 100, the better), but as the score is calculated by a patented algorithm it may not be easy to understand or explain the connection between real-world conditions and the score, or what might need to be done to improve the score and service levels. Nor does it appear to be possible for Transit Scores to be generated for proposed changes to networks. Another example is the TCQSM, which specifies Levels of Service (LOS) between A and F across a range of factors^[Including service span, frequency, speed, the proportion of the population serviced, competitiveness of travel times to car-based travel, and many more.]. This scoring scheme appears relatively simple to explain^[A is good and F is bad. Also this scoring system matches to the A to F LOS scoring used in many traffic capacity analysis software and manuals.], and the detail within @TCQSM:2013 provides a resource for anyone wanting to better understand what the scores mean. However, calculation of many of TCQSM metrics may need specialised software and datasets^[For example, the Service Coverage Area metric in the TCQSM (pp. 5-8 to 5-21) may require GIS or other analysis, on top of accurate data about population densities, stop locations and service schedules.] and it might be challenging to explain the detail of these measures or how to improve them to non-technical decision-makers, stakeholders or others involved in transit management or advocacy. 
+- @GuzmanLuisA.2017Aeit, 
+who develop a measure of accessibility 
+in the context of policy development 
+and social equity 
+for Latin American Bus Rapid Transit (BRT) based networks; and 
+-the street space allocation metrics 
+based around 10 ethical principles 
+introduced by @Creutzig2020streetspaceallocation. 
 
-The introduction of the General Transit Feed Specification (GTFS) and widespread release of schedule data in this format, however, has helped towards making transit metrics more broadly available and useable. GTFS is an open, text-based format that was developed originally to allow transit information to be included in the Google Maps navigation platform [@GTFS], although provides a mechanism for including individual transit systems in many online products and analysises, including the Transit Score metric itself. @Wong:2013aa provides another example, having developed code to calculate of some of the TCQSM metrics^[Daily average headways, route length and stop numbers for 50 transit operators.] directly from GTFS feed data. While the @Wong:2013aa open-source code for calculating some TCQSM metrics is readily available^[https://github.com/jcwong86/GTFS_Explore_Tool] this is now 11 years old and does not appear to be currently maintained. Future research may involve reviewing this code and using it to analyse modern GTFS feeds. However, in this paper the aim is more modest, being to use GTFS data to calculate Currie and Senbergs' (2007) SI.   
+However, 
+many of these metrics appear difficult to calculate, 
+complex to explain or understand, 
+and likely not well suited to communication 
+with those who are not transit planners or engineers, or otherwise technical specialists. 
+Where pre-calculated metrics 
+are immediately available 
+it may not be possible for  practitioners, 
+researchers 
+or advocates 
+to independently generate metrics for proposed system changes 
+or to even know exactly how scores for the existing services levels are calculated. 
+For example, 
+Transit Scores 
+for locations with a published GTFS feed 
+are readily available on a website, 
+eliminating the need for any calculations. 
+The meaning of these Transit Scores 
+appears easy to explain, 
+as the highest possible score of 100 
+represents what might be experienced in the centre of New York[@WalkScore:2023tg]]. 
+However, 
+the Transit Score algorithm 
+is patented 
+and effectively a black box. 
+It is not possible to calculate scores independently 
+or understand how the metric might change 
+with alteration to the transit system or services, 
+or the surrounding environment. 
+Transit Score, therefore, 
+fails the first of the aforementioned challenges, 
+as practitioners, researchers and advocates 
+can only use those scores provided by @WalkScore:2023tg
+While the metric is simple to explain, 
+as the closer to 100, the better, 
+because it is based on 
+a patented algorithm it may not be easy to understand or explain 
+the connection between real-world conditions 
+and the Transit Score, 
+or what might need to be done 
+to improve the score and service levels. 
+Nor does it appear to be possible 
+for Transit Scores to be generated for proposed changes to networks. 
+
+Another example is the TCQSM, 
+which specifies Levels of Service (LOS) between A and F 
+across a range of factors^[
+Including service span, 
+frequency, 
+speed, 
+the proportion of the population serviced, 
+competitiveness of travel times to car-based travel, 
+and many more.]. 
+This scoring scheme appears relatively simple to explain^[
+A is good and F is bad. 
+Also this scoring system matches the A to F LOS scoring used in many traffic capacity analysis software and manuals.], 
+and the detail within @TCQSM:2013 
+provides a resource for anyone wanting to better understand what the scores mean. 
+However, 
+calculation of many of TCQSM metrics may need specialised software 
+and datasets^[
+For example, 
+the Service Coverage Area metric in the TCQSM (pp. 5-8 to 5-21) 
+may require GIS or other analysis, 
+on top of accurate data about population densities, 
+stop locations 
+and service schedules.] 
+and it might be challenging to explain 
+the detail of these measures 
+or how to improve them 
+to non-technical decision-makers, 
+stakeholders 
+or others involved in transit management or advocacy. 
+
+The introduction of the General Transit Feed Specification (GTFS) 
+and widespread release of schedule data in this format, 
+however, 
+has helped towards making transit metrics more broadly available and useable. 
+GTFS is an open, 
+text-based format 
+that was developed originally to allow transit information to be included in the Google Maps navigation platform [@GTFS], 
+It now provides a mechanism 
+for including individual transit systems 
+in many online products and analyseses, 
+including the Transit Score metric itself. 
+@Wong:2013aa provides another example of what can be done with GTFS data, 
+having developed code to calculate of some of the TCQSM metrics^[
+Daily average headways, 
+route length 
+and stop numbers 
+for 50 transit operators.]. 
+While the @Wong:2013aa open-source code is readily available^[
+https://github.com/jcwong86/GTFS_Explore_Tool] 
+this is now 11 years old 
+and does not appear to be currently maintained. 
+Future research may involve 
+reviewing this code 
+and using it to analyse modern GTFS feeds. 
+However, 
+in this paper the aim is more modest, 
+being to use GTFS data to calculate Currie and Senbergs' (2007) SI.   
 
 
 ## The Suppy Index
@@ -108,10 +406,21 @@ The introduction of the General Transit Feed Specification (GTFS) and widespread
   \end{equation}
 ```
 
-The Supply Index (SI) equation is shown in the margin figure^[Minor adjustments have been made to generalise the equation, as Currie and Senbergs (2007) focus was the context of Melbourne's Census Collection Districts (CCD) and calculations based on a week of transit service. CCDs predate the introduction of Statistical Areas 1, 2, 3, and 4 (SA1, SA2, SA3, SA4), and other geographical divisions currently used by the Australian Bureau of Statistics (ABS), which may be more familiar to readers.], in which:
+The Supply Index (SI) equation 
+is shown in the margin figure^[
+Minor adjustments have been made 
+to generalise the equation, 
+as Currie and Senbergs (2007) focus was the context of Melbourne's Census Collection Districts (CCD) 
+and calculations based on a week of transit service. 
+CCDs predate the introduction of Statistical Areas 1, 2, 3, and 4 (SA1, SA2, SA3, SA4), and other geographical divisions 
+currently used by the Australian Bureau of Statistics (ABS), 
+which may be more familiar to readers.], 
+in which:
 
-- $SI_{area, time}$ is the Supply Index for the area of interest and a given period of time;
-- $Area_{Bn}$ is the buffer area for each stop (n) within the area of interest. In  Currie and Senbergs (2007) this was based on a radius of 400 metres for bus and tram stops, and 800 metres for railway stations;
+- $SI_{area, time}$ is the Supply Index for the area of interest 
+and a given period of time;
+- $Area_{Bn}$ is the buffer area for each stop (n) within the area of interest. In  
+Currie and Senbergs (2007) this was based on a radius of 400 metres for bus and tram stops, and 800 metres for railway stations;
 - $Area_area$ is the area of the area of interest; and
 - $SL_{n,time}$ is the number of transit arrivals for each stop for a given time period.
 
