@@ -69,10 +69,9 @@ library(dplyr)
 
 # Introduction
 "If you can't measure it, you can't manage it" 
-is often miss-attributed to @Deming1993new 
-who, 
-according to @Berenson2016, 
-was actually trying to make the opposite point. 
+is often miss-attributed to @Deming1993new, 
+who was actually trying to
+make the opposite point[@Berenson2016]. 
 Regardless, 
 service level indicators 
 are an important part of 
@@ -101,8 +100,8 @@ their meaning
 and importance 
 to those who are not specialists in transit, 
 such as to politicians 
-or the general public
-^[Of the examples above, 
+or the general public^[
+Of the examples above, 
 the metrics in the TCQSM appear: 
 difficult to calculate in practice, 
 and difficult to explain 
@@ -144,7 +143,8 @@ provided by the transit authority
 in Melbourne, Australia. 
 However, this database appears to have been 
 in a format specific to Victoria 
-and the agency itself^[Public Transport Victoria (PTV)},
+and the agency itself^[
+Public Transport Victoria (PTV)],
 and so if SI scores for a different location were desired^[Or perhaps even for Melbourne again, 
 but at a different time 
 given that the database format has likely changed 
@@ -195,7 +195,7 @@ and quicker.
 This document reports 
 the development of code to calculate SI scores 
 from GTFS datasets 
-as an R package[@gtfssupplyindex_github]. 
+as an R package [@gtfssupplyindex_github]. 
 Structuring the code as an R package^[
 Rather than as scripts within a R Markdown file, 
 as for the original Transit_Supply_Index_GTFS efforts] 
@@ -418,8 +418,8 @@ which may be more familiar to readers.],
 in which:
 (1) $SI_{area, time}$ is the Supply Index for the area of interest 
 and a given period of time;
-(2) $Area_{Bn}$ is the buffer area for each stop (n) within the area of interest. In  
-Currie and Senbergs (2007) this was based on 
+(2) $Area_{Bn}$ is the buffer area for each stop (n) within the area of interest. 
+In Currie and Senbergs (2007) this was based on 
 a radius of 400 metres for bus and tram stops, 
 and 800 metres for railway stations;
 (3) $Area_{area}$ is the area of the area of interest; and
@@ -528,14 +528,16 @@ knitr::include_graphics("graphics/SI_data_structure.png")
 
 ```
 
-Each box represents a database table, with table rows indicating the variables (columns) included in each^[For example, each record in the 'stops' table includes a value for stop_id, stop_name, stop_lat and stop_lon.]. Relationships between the tables are indicated by the connecting lines, and Primary Key (PK) and Foreign Key (FK) designations^[For example, stop_id also appears in the 'stop_times' table as a Primary Key and Foreign Key.]. `Crow's feet' indicate the relationships between each table^[See https://i.stack.imgur.com/fxaAq.png for guide to the symbols. But, for example, the stops table is required, with the stop_id field providing a unique (primary) key for every stop. Within the stop_times table (which is also required) the stop_id field is a foreign key. Each unique stop_id can appear many times in the stop_times table, but must appear only once in the stops table. In the stop_times table each combination of trip_id, stop_id and arrival time must be unique (But, see note 2!) meaning that these fields represent a composite key.]
+Each box represents a database table, with table rows indicating the variables (columns) included in each^[For example, each record in the 'stops' table includes a value for stop_id, stop_name, stop_lat and stop_lon.]. Relationships between the tables are indicated by the connecting lines, and Primary Key (PK) and Foreign Key (FK) designations^[For example, stop_id also appears in the 'stop_times' table as a Primary Key and Foreign Key.]. `Crow's feet' indicate the relationships between each table^[See https://i.stack.imgur.com/fxaAq.png for guide to the symbols. But, for example, the stops table is required, with the stop_id field providing a unique (primary) key for every stop. Within the stop_times table (which is also required) the stop_id field is a foreign key. Each unique stop_id can appear many times in the stop_times table, but must appear only once in the stops table. In the stop_times table each combination of trip_id, stop_id and arrival time must be unique (But, see note 2!) meaning that these fields represent a composite key.].
 
-The upper part of the ERD shows the GTFS structure, which remains unchanged.  Below this are the additional tables developed for the purposes of calculating the SI for each area of interest. The desired end result (bottom right) is the si_by_area_day_and_hour, which will report the SI score for each hour and date.  
+The upper part of the ERD shows the GTFS structure, which remains unchanged.  Below this are the additional tables developed for the purposes of calculating the SI for each area of interest. The desired end result is the si_by_area_day_and_hour table (bottom right), which reports the SI score for each hour of the day across dates specified by the user.  
 
-As discussed above, the SI is addative, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[Because individual modes may have different buffer distances.] for individual periods of time. 
+As discussed above, the SI is addative, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
 
 
 ### Functions
+
+The gtfssupplyindex includes various functions that automate the SI calculation^[See https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R. These include departures.R and arrivals.R, which calculate the number of times a stop is serviced in a given period of time, as a generalisation of code in the tidytransit vignettss.]. 
 
 ### Testing
 
