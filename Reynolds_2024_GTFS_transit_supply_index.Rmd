@@ -91,12 +91,11 @@ researchers
 and advocates 
 seeking to use such metrics 
 may face two inter-related challenges: 
-
-- firstly, 
+(1) 
 there is the problem of calculating the metrics themselves 
 for a specific location 
-and service pattern; 
-- secondly, 
+and service pattern; and
+(2) 
 is the challenge of explaining the metrics, 
 their meaning 
 and importance 
@@ -249,15 +248,14 @@ Even a brief search shows
 that there is a very large number of metrics 
 available for benchmarking transit services. 
 Examples include: 
-
-- those in the Transit Cooperative Research Program (TCRP) Report 88, which is an extensive guidebook on developing a performance-measurement system [@Ryus:2003aa]; 
-- online databases provided by 
+(1) those in the Transit Cooperative Research Program (TCRP) Report 88, which is an extensive guidebook on developing a performance-measurement system [@Ryus:2003aa]; 
+(2) online databases provided by 
 the Florida Transit Information System (FTIS) [@Florida-Transit-Information-System:2018aa] 
 and @UITP:2015aa; 
-- those used in the extensive annual benchmarking programme 
+(3) those used in the extensive annual benchmarking programme 
 undertaken yearly by the Transport Strategy Centre, 
 which includes over 100 transit providers around the world [@Imperial-College-London:2023aa]; and
-- a recently developed methodology to calculate 'blank spots' within an area, 
+(4) a recently developed methodology to calculate 'blank spots' within an area, 
 being those places beyond 400/800 metre walking distances to/from bus and tram stops/train stations@AlamriSultan2023GAoA. 
   
   
@@ -285,13 +283,12 @@ incrementalism
 and other public policy models 
 might apply to decision-making processes. 
 Further examples include:
-
-- @GuzmanLuisA.2017Aeit, 
+(1) @GuzmanLuisA.2017Aeit, 
 who develop a measure of accessibility 
 in the context of policy development 
 and social equity 
 for Latin American Bus Rapid Transit (BRT) based networks; and 
--the street space allocation metrics 
+(2) the street space allocation metrics 
 based around 10 ethical principles 
 introduced by @Creutzig2020streetspaceallocation. 
 
@@ -410,47 +407,117 @@ The Supply Index (SI) equation
 is shown in the margin figure^[
 Minor adjustments have been made 
 to generalise the equation, 
-as Currie and Senbergs (2007) focus was the context of Melbourne's Census Collection Districts (CCD) 
+as Currie and Senbergs (2007) focus 
+was the context of Melbourne's Census Collection Districts (CCD) 
 and calculations based on a week of transit service. 
-CCDs predate the introduction of Statistical Areas 1, 2, 3, and 4 (SA1, SA2, SA3, SA4), and other geographical divisions 
+CCDs predate the introduction of 
+Statistical Areas 1, 2, 3, and 4 (SA1, SA2, SA3, SA4), 
+and other geographical divisions 
 currently used by the Australian Bureau of Statistics (ABS), 
 which may be more familiar to readers.], 
 in which:
-
-- $SI_{area, time}$ is the Supply Index for the area of interest 
+(1) $SI_{area, time}$ is the Supply Index for the area of interest 
 and a given period of time;
-- $Area_{Bn}$ is the buffer area for each stop (n) within the area of interest. In  
-Currie and Senbergs (2007) this was based on a radius of 400 metres for bus and tram stops, and 800 metres for railway stations;
-- $Area_area$ is the area of the area of interest; and
-- $SL_{n,time}$ is the number of transit arrivals for each stop for a given time period.
+(2) $Area_{Bn}$ is the buffer area for each stop (n) within the area of interest. In  
+Currie and Senbergs (2007) this was based on 
+a radius of 400 metres for bus and tram stops, 
+and 800 metres for railway stations;
+(3) $Area_area$ is the area of the area of interest; and
+(4) $SL_{n,time}$ is the number of transit arrivals for each stop 
+for a given time period.
 
-An advantage of the SI is that it is a relatively simple number to calculate, understand and explain. It describes the number of transit arrivals at stops within an area of interest and time frame, multiplied by a factor accounting for the proportion of the area of interest that is within typical walking distance of each stop. Hence, more services, more stops and higher frequencies would all increase the SI score. The SI does not incorporate service span, speed or other elements of a transit service, all of which are important to passenger experience, but which might add considerable complexity. Simplicity is also helped by the way that the Index is additive, in that $SI_{area, time}$ scores can be aggregated to calculate an overall score across multiple time periods or for a region encompassing multiple areas of interest. 
+An advantage of the SI is 
+that it is a relatively simple number 
+to calculate, 
+understand 
+and explain. 
+It describes 
+the number of transit arrivals 
+at stops within 
+an area of interest 
+and time frame, 
+multiplied by a factor 
+accounting for the proportion of the area of interest that is within typical walking distance of each stop. 
+Hence, 
+more services, 
+more stops 
+and higher frequencies 
+would all increase the SI score. 
+The SI does not incorporate 
+service span, 
+speed 
+or other elements of a transit service. 
+These may be important 
+to passenger experience, 
+but might add considerable complexity. 
+Simplicity is also helped 
+by the way 
+that the Index is additive, 
+in that $SI_{area, time}$ scores can be aggregated 
+to calculate an overall score 
+across multiple time periods 
+or for a region encompassing multiple areas of interest. 
 
 ## R and packages
-R [@R-base] is a widely used statistical programming language. The GTFS-related packages gtfstools[@R-gtfstools] and tidytransit[@R-tidytransit] are already available^[tidytransit is licensed under GPL-2 | GPL-3, while gtfstools is lincensed under the more permissive MIT license. For simplicity, the gtfssupplyindex package developed here is licensed under GPL-3 so as to match tidytransit.]. As such, this study aimed to expand on these and build a new package including functions useful for calculating the SI, as discussed in the following section. 
-
-
+R [@R-base] is a widely used statistical programming language. 
+The GTFS-related packages gtfstools [@R-gtfstools] 
+and tidytransit [@R-tidytransit] 
+are already available^[
+tidytransit is licensed under GPL-2 | GPL-3, 
+while gtfstools is lincensed under the more permissive MIT license. 
+For simplicity, 
+the gtfssupplyindex package developed here 
+is licensed under GPL-3 
+so as to match tidytransit.]. 
+As such, 
+this study aimed 
+to expand on these 
+and build a new package 
+including functions useful for calculating the SI, 
+as discussed in the following section. 
 
 # Methodology
-The package development setup and workflow described by @wickham2023r was adopted in this study. Existing packages were relied upon including: the sf package [@R-sf] for geospatial analysis; the tidyverse [@tidyverse2019] and many others. Some code was adapted from the tidytransit, gtfstools and other package's examples, vignettes and other documentation [@tidytransit_departure_timetable; @filter_GTFS_by_mode]. 
+The package development setup and workflow described by @wickham2023r 
+was adopted in this study. 
+Existing packages were relied upon including: 
+the sf package [@R-sf] for geospatial analysis; 
+the tidyverse [@tidyverse2019] 
+and many others. 
+Some code was adapted from the tidytransit, 
+gtfstools 
+and other package's examples, 
+vignettes and 
+other documentation [@tidytransit_departure_timetable; @filter_GTFS_by_mode]. 
 
-Tidytransit includes a GTFS feed from New York's MTA as a sample feed, and so this is used for code tests were appropriate. Larger scale testing was performed using the Victorian GTFS feed, published by Public Transport Victoria (PTV), sourced via @transitfeeds_victoria:2023aa for historical feeds. ABS data was also used, primarily through the strayr and absmapsdata packages [@r-strayr]
-
-
+Tidytransit includes a sample GTFS feed from New York's MTA
+(including the subway!), 
+and so this was used for code tests were appropriate. 
+Larger scale testing was performed using the Victorian GTFS feed, 
+published by Public Transport Victoria (PTV), 
+ourced via @transitfeeds_victoria:2023aa for historical feeds. 
+ABS data was also used, 
+primarily through the strayr 
+and absmapsdata packages [@r-strayr].
 
 # Results
-
 ## Code
-Details of the developed code are available in the documentation on github [@gtfssupplyindex_github]. The code development involved: 
-
-- expanding on the GTFS database structure to develop one to support the SI calculation
-- adapting the @tidytransit_departure_timetable code to create a function (departures.R) that takes in a GTFS feed, stop name, date, start time and end time to output a number representing the number of departures.
-
+Details of the developed code are available 
+in the documentation on github [@gtfssupplyindex_github]. 
+The code development involved: 
+(1) expanding on the GTFS database structure 
+to develop one to support the SI calculation
+(2) adapting the @tidytransit_departure_timetable code 
+to create a function (departures.R) 
+that takes in a GTFS feed, 
+stop name, 
+date, 
+start time 
+and end time 
+to output a number representing the number of departures.
 <TO DO>
-
-- create similar arrivals.R function
-- finish drawing the ERD in lucid.app
-- then do all the other functions needed
+(3) create similar arrivals.R function
+(4) finish drawing the ERD in lucid.app, 
+and (5) then do all the other functions needed
 
 
 ```{r fig-fullwidth, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram. Source: adapted by author from Alamri et al (2023).", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
