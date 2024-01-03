@@ -71,7 +71,7 @@ library(dplyr)
 "If you can't measure it, you can't manage it" 
 is often miss-attributed to @Deming1993new, 
 who was actually trying to
-make the opposite point[@Berenson2016]. 
+make the opposite point [@Berenson2016]. 
 Regardless, 
 service level indicators 
 are an important part of 
@@ -532,12 +532,23 @@ Each box represents a database table, with table rows indicating the variables (
 
 The upper part of the ERD shows the GTFS structure, which remains unchanged.  Below this are the additional tables developed for the purposes of calculating the SI for each area of interest. The desired end result is the si_by_area_day_and_hour table (bottom right), which reports the SI score for each hour of the day across dates specified by the user.  
 
-As discussed above, the SI is addative, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
+As discussed above, the SI is additive, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
 
+The buffer_distance table draws data from Comma Separated Variables (CSV) file, based on the Extended GTFS Route Types definitions^[https://developers.google.com/transit/gtfs/reference/extended-route-types], with defaults of 800 metres and 400 metres for heavy rail and all other modes respectively. 
+
+The areas_of_interest table stores geometric information about the areas for which SI scores are desired, as simple features^[See https://cran.r-project.org/web/packages/sf/vignettes/sf1.html]. The stops_in_or_near_areas and si_by_mode_and_time tables are used to store components of the SI during the calculations, which are described in the following.  
 
 ### Functions
 
-The gtfssupplyindex includes various functions that automate the SI calculation^[See https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R. These include departures.R and arrivals.R, which calculate the number of times a stop is serviced in a given period of time, as a generalisation of code in the tidytransit vignettss.]. 
+The gtfssupplyindex includes various functions that automate the SI calculation^[See https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R]. These are shown in the above ERD, and are: 
+
+- the gtfs_by_mode.R function, which first transforms the gtfs data into a list of tidygtfs objects, with a list entry for each route_type (mode);
+- the stops_in_walk_dist.R function, which determines which of the stops within the GTFS dataset is inside or within walking distance of the areas_of_interest boundaries. 
+- the area_terms.R function, which calculates the $Area_{Bn}/Area_{area}$ component of the SI for each combination of stop, area of interest and route type (mode); 
+- arrivals.R, which calculates the number of service arrivals at a stop within a given time period on a specific date, being $SL_{n,time}$ component of the SI^[departures.R and arrivals.R are a generalisations of code in the tidytransit vignettes.]; 
+- SI_calc.R, which combines the various terms in the SI caluclation; and
+- hourly.R, which provides a wrapper function to calculate hourly SIs for all areas of interests on a specific date or set of dates. 
+
 
 ### Testing
 
