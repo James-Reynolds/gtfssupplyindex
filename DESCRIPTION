@@ -13,7 +13,10 @@ RoxygenNote: 7.2.3
 Roxygen: list(markdown = TRUE)
 Imports: 
     dplyr,
-    lubridate
+    lubridate,
+    units,
+    tibble,
+    magrittr
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

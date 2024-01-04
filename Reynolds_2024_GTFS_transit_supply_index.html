@@ -12,7 +12,7 @@
 
 <meta name="author" content="James Reynolds" />
 
-<meta name="date" content="2024-01-03" />
+<meta name="date" content="2024-01-04" />
 
 <title>Leveraging GTFS data to assess transit supply</title>
 
@@ -113,7 +113,7 @@ margin-left: 2em;
 
 <h1 class="title toc-ignore">Leveraging GTFS data to assess transit supply</h1>
 <h4 class="author">James Reynolds</h4>
-<h4 class="date">2024-01-03</h4>
+<h4 class="date">2024-01-04</h4>
 
 
 
@@ -587,8 +587,9 @@ SI data structure entity relationship diagram. Source: adapted by author from Al
 </div>
 <div id="functions" class="section level3">
 <h3>Functions</h3>
-<p>The gtfssupplyindex includes various functions that automate the SI calculation<label for="tufte-sn-21" class="margin-toggle sidenote-number">21</label><input type="checkbox" id="tufte-sn-21" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">21</span> See <a href="https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R" class="uri">https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R</a></span>. These are shown in the above ERD, and are:</p>
+<p>The gtfssupplyindex package includes various functions that automate the SI calculation<label for="tufte-sn-21" class="margin-toggle sidenote-number">21</label><input type="checkbox" id="tufte-sn-21" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">21</span> See <a href="https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R" class="uri">https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R</a></span>. These are shown in the above ERD. These are:</p>
 <ul>
+<li>the load_buffer_zones.R function does what it says on the tin. The included csv file has default values of 800m (heavy rail) and 400m (everything else).</li>
 <li>the gtfs_by_mode.R function, which first transforms the gtfs data into a list of tidygtfs objects, with a list entry for each route_type (mode);</li>
 <li>the stops_in_walk_dist.R function, which determines which of the stops within the GTFS dataset is inside or within walking distance of the areas_of_interest boundaries.</li>
 <li>the area_terms.R function, which calculates the <span class="math inline">\(Area_{Bn}/Area_{area}\)</span> component of the SI for each combination of stop, area of interest and route type (mode);</li>

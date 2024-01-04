@@ -1,5 +1,5 @@
 route_type, short_name, mode, description_examples, buffer_distance
-0,LRT,"Tram, Streetcar, Light rail.","Any light rail or street level system within a metropolitan area.",400
+0,lrt,"Tram, Streetcar, Light rail.","Any light rail or street level system within a metropolitan area.",400
 1,subway,"Subway, Metro.","Any underground rail system within a metropolitan area.",800
 2,rail,"Rail","Used for intercity or long-distance travel.",800
 3,bus,"Bus","Used for short- and long-distance bus routes.",400
