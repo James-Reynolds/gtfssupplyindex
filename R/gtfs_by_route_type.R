@@ -2,7 +2,7 @@
 #'
 #' `gtfs_by_route_type()` loads a GTFS into the datatable format used by gtfstool, then splits it by route_type, and returns a list with a tidygtfs for each route type
 #'
-#' @param path to GTFS .zip file
+#' @param path to GTFS .zip file. Defaults to the NYC MTA sample gtfs from tidytransit package
 #'
 #' @returns A list, each element being a tidygtfs for an individual mode.
 #' @export
@@ -17,7 +17,7 @@
 #' gtfs_by_route_type(path)
 
 
-gtfs_by_route_type <- function(path){ 
+gtfs_by_route_type <- function(path = file.path(system.file("extdata", package = "tidytransit"), "google_transit_nyc_subway.zip")){ 
   
   #load gtfs as a gtfs_tools_object
   gtfs_as_gtfs_tools_object <- gtfstools::read_gtfs(path)

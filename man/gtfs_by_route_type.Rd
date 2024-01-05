@@ -4,10 +4,13 @@
 \alias{gtfs_by_route_type}
 \title{tidygtfs object to list by route_type of tidygtfs object}
 \usage{
-gtfs_by_route_type(path)
+gtfs_by_route_type(
+  path = file.path(system.file("extdata", package = "tidytransit"),
+    "google_transit_nyc_subway.zip")
+)
 }
 \arguments{
-\item{path}{to GTFS .zip file}
+\item{path}{to GTFS .zip file. Defaults to the NYC MTA sample gtfs from tidytransit package}
 }
 \value{
 A list, each element being a tidygtfs for an individual mode.
