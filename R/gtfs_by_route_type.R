@@ -5,8 +5,17 @@
 #' @param path to GTFS .zip file
 #'
 #' @returns A list, each element being a tidygtfs for an individual mode.
-#'
 #' @export
+#' 
+#' @examples
+#' # Load sample google-supplied sample gtfs from gtfstools
+#' path <- file.path(system.file("extdata", package = "gtfstools"), "ggl_gtfs.zip")
+#' gtfs_by_route_type(path)
+#'
+#' # Load NYC MTA sample gtfs from tidytransit
+#' path <- file.path(system.file("extdata", package = "tidytransit"), "google_transit_nyc_subway.zip")
+#' gtfs_by_route_type(path)
+
 
 gtfs_by_route_type <- function(path){ 
   
@@ -15,7 +24,9 @@ gtfs_by_route_type <- function(path){
   
   
   #load buffer_distances information for route_types in gtfs
-  buffer_zones_definition_path = "inst/extdata/buffer_zones.csv"
+  buffer_zones_definition_path = system.file("extdata", "buffer_zones.csv", package = "gtfssupplyindex", mustWork = TRUE) 
+  
+  
   buffer_distance <- tibble::as_tibble(
       read.csv(buffer_zones_definition_path) %>%
         dplyr::select(route_type, buffer_distance, short_name)
@@ -41,18 +52,4 @@ gtfs_by_route_type <- function(path){
   }
   return(gtfs_by_route_type)
 }
-
-
-
-
-
-#' @examples
-#' # Load sample google-supplied sample gtfs from gtfstools
-#' path <- file.path(system.file("extdata", package = "gtfstools"), "ggl_gtfs.zip")
-#' gtfs_by_route_type(path)
-#'
-#' # Load NYC MTA sample gtfs from tidytransit
-#' path <- file.path(system.file("extdata", package = "tidytransit"), "google_transit_nyc_subway.zip")
-#' gtfs_by_route_type(path)
-
 

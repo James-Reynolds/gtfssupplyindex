@@ -14,9 +14,10 @@ Roxygen: list(markdown = TRUE)
 Imports: 
     dplyr,
     lubridate,
-    units,
     tibble,
-    magrittr
+    magrittr,
+    gtfstools,
+    tidytransit
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

@@ -15,3 +15,12 @@ A list, each element being a tidygtfs for an individual mode.
 \description{
 \code{gtfs_by_route_type()} loads a GTFS into the datatable format used by gtfstool, then splits it by route_type, and returns a list with a tidygtfs for each route type
 }
+\examples{
+# Load sample google-supplied sample gtfs from gtfstools
+path <- file.path(system.file("extdata", package = "gtfstools"), "ggl_gtfs.zip")
+gtfs_by_route_type(path)
+
+# Load NYC MTA sample gtfs from tidytransit
+path <- file.path(system.file("extdata", package = "tidytransit"), "google_transit_nyc_subway.zip")
+gtfs_by_route_type(path)
+}
