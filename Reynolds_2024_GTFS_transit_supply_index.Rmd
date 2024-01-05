@@ -542,7 +542,6 @@ The areas_of_interest table stores geometric information about the areas for whi
 
 The gtfssupplyindex package includes various functions that automate the SI calculation^[See https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R]. These are shown in the above ERD. These are: 
 
-- the load_buffer_zones.R function does what it says on the tin. The included csv file has default values of 800m (heavy rail) and 400m (everything else). 
 - the gtfs_by_mode.R function, which first transforms the gtfs data into a list of tidygtfs objects, with a list entry for each route_type (mode);
 - the stops_in_walk_dist.R function, which determines which of the stops within the GTFS dataset is inside or within walking distance of the areas_of_interest boundaries. 
 - the area_terms.R function, which calculates the $Area_{Bn}/Area_{area}$ component of the SI for each combination of stop, area of interest and route type (mode); 
