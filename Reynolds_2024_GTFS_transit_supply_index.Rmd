@@ -372,8 +372,17 @@ however,
 has helped towards making transit metrics more broadly available and useable. 
 GTFS is an open, 
 text-based format 
-that was developed originally to allow transit information to be included in the Google Maps navigation platform [@GTFS], 
-It now provides a mechanism 
+that was developed originally to allow transit information to be included in the Google Maps navigation platform [@GTFS]. 
+The data structure is shown in the below figure. 
+
+```{r GTFS_ERD, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "GTFS entity relationship diagram. Source: adapted by author from Alamri et al (2023) and the GTFS Schedule Reference (16/11/2023 revision).", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+knitr::include_graphics("graphics/GTFS.png")
+
+```
+
+In the Entity Relationship Diargram (ERD) shown above, each box represents a database table in the GTFS, with table rows indicating the variables (columns) included in each^[For example, each record in the 'stops' table includes a value for stop_id, stop_name, stop_lat and stop_lon.]. Relationships between the tables are indicated by the connecting lines, and Primary Key (PK) and Foreign Key (FK) designations^[For example, stop_id also appears in the 'stop_times' table as a Primary Key and Foreign Key.]. `Crow's feet' indicate the relationships between each table^[See https://i.stack.imgur.com/fxaAq.png for guide to the symbols. But, for example, the stops table is required, with the stop_id field providing a unique (primary) key for every stop. Within the stop_times table (which is also required) the stop_id field is a foreign key. Each unique stop_id can appear many times in the stop_times table, but must appear only once in the stops table. In the stop_times table each combination of trip_id, stop_id and arrival time must be unique (But, see note 2!) meaning that these fields represent a composite key.].
+
+GTFS now provides a mechanism 
 for including individual transit systems 
 in many online products and analyseses, 
 including the Transit Score metric itself. 
@@ -393,6 +402,7 @@ and using it to analyse modern GTFS feeds.
 However, 
 in this paper the aim is more modest, 
 being to use GTFS data to calculate Currie and Senbergs' (2007) SI.   
+
 
 
 ## The Suppy Index
@@ -523,16 +533,12 @@ as discussed in the following
 Calculating the SI for a GTFS feed and set of areas of interest is effectively a database problem. The database structure developed in this study is shown in the below Entity Relationship Diagram (ERD). 
 
 
-```{r fig-fullwidth, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram. Source: adapted by author from Alamri et al (2023) and the GTFS Schedule Reference (16/11/2023 revision).", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+```{r SI_ERD, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram. Source: adapted by author from Alamri et al (2023) and the GTFS Schedule Reference (16/11/2023 revision).", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 knitr::include_graphics("graphics/SI_data_structure.png")
 
 ```
 
-Each box represents a database table, with table rows indicating the variables (columns) included in each^[For example, each record in the 'stops' table includes a value for stop_id, stop_name, stop_lat and stop_lon.]. Relationships between the tables are indicated by the connecting lines, and Primary Key (PK) and Foreign Key (FK) designations^[For example, stop_id also appears in the 'stop_times' table as a Primary Key and Foreign Key.]. `Crow's feet' indicate the relationships between each table^[See https://i.stack.imgur.com/fxaAq.png for guide to the symbols. But, for example, the stops table is required, with the stop_id field providing a unique (primary) key for every stop. Within the stop_times table (which is also required) the stop_id field is a foreign key. Each unique stop_id can appear many times in the stop_times table, but must appear only once in the stops table. In the stop_times table each combination of trip_id, stop_id and arrival time must be unique (But, see note 2!) meaning that these fields represent a composite key.].
-
-The upper part of the ERD shows the GTFS structure, which remains unchanged.  Below this are the additional tables developed for the purposes of calculating the SI for each area of interest. The desired end result is the si_by_area_day_and_hour table (bottom right), which reports the SI score for each hour of the day across dates specified by the user.  
-
-As discussed above, the SI is additive, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
+The desired end result is the si_by_area_day_and_hour table (bottom right), which reports the SI score for each hour of the day across dates specified by the user. As discussed above, the SI is additive, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
 
 The buffer_distance table draws data from Comma Separated Variables (CSV) file, based on the Extended GTFS Route Types definitions^[https://developers.google.com/transit/gtfs/reference/extended-route-types], with defaults of 800 metres and 400 metres for heavy rail and all other modes respectively. 
 
@@ -542,12 +548,14 @@ The areas_of_interest table stores geometric information about the areas for whi
 
 The gtfssupplyindex package includes various functions that automate the SI calculation^[See https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R]. These are shown in the above ERD. These are: 
 
-- the gtfs_by_mode.R function, which first transforms the gtfs data into a list of tidygtfs objects, with a list entry for each route_type (mode);
-- the stops_in_walk_dist.R function, which determines which of the stops within the GTFS dataset is inside or within walking distance of the areas_of_interest boundaries. 
-- the area_terms.R function, which calculates the $Area_{Bn}/Area_{area}$ component of the SI for each combination of stop, area of interest and route type (mode); 
-- arrivals.R, which calculates the number of service arrivals at a stop within a given time period on a specific date, being $SL_{n,time}$ component of the SI^[departures.R and arrivals.R are a generalisations of code in the tidytransit vignettes.]; 
-- SI_calc.R, which combines the various terms in the SI caluclation; and
-- hourly.R, which provides a wrapper function to calculate hourly SIs for all areas of interests on a specific date or set of dates. 
+- load_buffer_zone.R, which obtains data about route_type, (mode) name and the assumed catchment areas (400 or 800m);
+- load_areas_of_interest.R, which get geographic data about the areas of interest for which the SI calculation is to be performed; 
+- the gtfs_by_mode.R function, which transforms the gtfs data into a list of tidygtfs objects, with an entry for each route_type (mode);
+- the stops_in_walk_dist.R function, which determines which of the stops within the GTFS dataset is inside or within walking distance of the areas_of_interest boundaries - CURRRENT IN DEVELOPMENT, NEXT STEP ISTO FIGURE OUT HOW TO MAKE SURE THAT THE PROJECTION USED IS IN METRES, OR TRANSFORM IF NECESSARY. 
+- the area_terms.R function, which calculates the $Area_{Bn}/Area_{area}$ component of the SI for each combination of stop, area of interest and route type (mode) - TO BE DEVELOPED; 
+- arrivals.R, which calculates the number of service arrivals at a stop within a given time period on a specific date, being $SL_{n,time}$ component of the SI^[departures.R and arrivals.R are a generalisations of code in the tidytransit vignettes.] - TO BE DEVELOPED, JUST NEED TO ADAPT THE DEPARTURES.R; 
+- SI_calc.R, which combines the various terms in the SI caluclation - TO BE DEVELOPED; and
+- hourly.R, which provides a wrapper function to calculate hourly SIs for all areas of interests on a specific date or set of dates - TO BE DEVELOPED. 
 
 
 ### Testing
@@ -564,7 +572,7 @@ The gtfssupplyindex package includes various functions that automate the SI calc
 # Conclusion
 
 # References {#references }
---->
+
 
 ```{r, include=FALSE}
 knitr::write_bib(file = 'packages.bib')
