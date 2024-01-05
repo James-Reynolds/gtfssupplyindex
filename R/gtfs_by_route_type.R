@@ -22,15 +22,7 @@ gtfs_by_route_type <- function(path){
   #load gtfs as a gtfs_tools_object
   gtfs_as_gtfs_tools_object <- gtfstools::read_gtfs(path)
   
-  
-  #load buffer_distances information for route_types in gtfs
-  buffer_zones_definition_path = system.file("extdata", "buffer_zones.csv", package = "gtfssupplyindex", mustWork = TRUE) 
-  
-  
-  buffer_distance <- tibble::as_tibble(
-      read.csv(buffer_zones_definition_path) %>%
-        dplyr::select(route_type, buffer_distance, short_name)
-          )
+  buffer_distance <- gtfssupplyindex:::load_buffer_zones()
   # Keep only buffer distance definitions for those routes_types in the gtfs
   buffer_distance <- buffer_distance[ 
           which(

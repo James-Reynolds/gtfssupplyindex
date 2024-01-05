@@ -3,4 +3,5 @@
 export(area_terms)
 export(departures)
 export(gtfs_by_route_type)
+export(load_buffer_zones)
 importFrom(magrittr,"%>%")
