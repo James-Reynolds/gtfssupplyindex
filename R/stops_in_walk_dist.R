@@ -10,6 +10,8 @@
 #'
 #' @examples
 #' stops_in_walk_dist()
+#' 
+
 stops_in_walk_dist <- function(
     list_gtfs = gtfssupplyindex:::gtfs_by_route_type(
       path = file.path(
@@ -38,7 +40,7 @@ stops_in_walk_dist <- function(
   
   # Obtain CRS of geojson
   ## STILL NEED TO UNDERSTAND HOW TO MAKE THIS BE IN METRES RATHER THAN FT FOR NYC
-  areas_of_interest_crs <- st_crs(areas_of_interest)$input
+  areas_of_interest_crs <- sf::st_crs(areas_of_interest)$input
   
   # Convert the lat and long in the gtfs into x and y to match the geojson
   stops_x_y <- tibble(stop_id = 

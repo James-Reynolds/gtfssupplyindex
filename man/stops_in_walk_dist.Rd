@@ -10,7 +10,8 @@ stops_in_walk_dist(
     "google_transit_nyc_subway.zip")),
   areas_of_interest = gtfssupplyindex:::load_areas_of_interest(areas_of_interest =
     sf::st_read(system.file("extdata", "nyc.geojson", package = "gtfssupplyindex",
-    mustWork = TRUE)), area_id_field = "geoid")
+    mustWork = TRUE)), area_id_field = "geoid"),
+  buffer_distance = gtfssupplyindex:::load_buffer_zones()
 )
 }
 \arguments{
@@ -29,4 +30,5 @@ Determine which stops are within walking distance of which areas of intersest
 }
 \examples{
 stops_in_walk_dist()
+
 }

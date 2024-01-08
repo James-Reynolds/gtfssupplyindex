@@ -551,7 +551,7 @@ The gtfssupplyindex package includes various functions that automate the SI calc
 - load_buffer_zone.R, which obtains data about route_type, (mode) name and the assumed catchment areas (400 or 800m);
 - load_areas_of_interest.R, which get geographic data about the areas of interest for which the SI calculation is to be performed; 
 - the gtfs_by_mode.R function, which transforms the gtfs data into a list of tidygtfs objects, with an entry for each route_type (mode);
-- the stops_in_walk_dist.R function, which determines which of the stops within the GTFS dataset is inside or within walking distance of the areas_of_interest boundaries - CURRRENT IN DEVELOPMENT, NEXT STEP ISTO FIGURE OUT HOW TO MAKE SURE THAT THE PROJECTION USED IS IN METRES, OR TRANSFORM IF NECESSARY. 
+- the stops_in_walk_dist.R function, which determines which of the stops within the GTFS dataset is inside or within walking distance of the areas_of_interest boundaries - CURRRENTLY IN DEVELOPMENT, NEXT STEP ISTO FIGURE OUT HOW TO MAKE SURE THAT THE PROJECTION USED IS IN METRES, OR TRANSFORM IF NECESSARY. 
 - the area_terms.R function, which calculates the $Area_{Bn}/Area_{area}$ component of the SI for each combination of stop, area of interest and route type (mode) - TO BE DEVELOPED; 
 - arrivals.R, which calculates the number of service arrivals at a stop within a given time period on a specific date, being $SL_{n,time}$ component of the SI^[departures.R and arrivals.R are a generalisations of code in the tidytransit vignettes.] - TO BE DEVELOPED, JUST NEED TO ADAPT THE DEPARTURES.R; 
 - SI_calc.R, which combines the various terms in the SI caluclation - TO BE DEVELOPED; and
