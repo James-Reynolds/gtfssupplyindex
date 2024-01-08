@@ -1,6 +1,6 @@
 #' Determine which stops are within walking distance of which areas of intersest
 #'
-#' @param list_gtfs A list, each element being a tidygtfs for an individual mode.
+#' @param gtfs_single_route_type A list, each element being a tidygtfs for an individual mode.
 #' @param areas_of_interest sf object with area_id field and geometry only
 #' @param buffer_distance buffer distance definitions 
 #'
@@ -12,43 +12,69 @@
 #' stops_in_walk_dist()
 #' 
 
+
 stops_in_walk_dist <- function(
-    list_gtfs = gtfssupplyindex:::gtfs_by_route_type(
-      path = file.path(
-        system.file(
-          "extdata", 
-          package = "tidytransit"),
-        "google_transit_nyc_subway.zip")
-      ),
-    areas_of_interest = gtfssupplyindex:::load_areas_of_interest(
-      areas_of_interest = sf::st_read(
-        system.file(
-      "extdata",
-      "nyc.geojson", 
-      package = "gtfssupplyindex", 
-      mustWork = TRUE)), 
-      area_id_field = "geoid"),
-    buffer_distance = gtfssupplyindex:::load_buffer_zones()
+    gtfs_single_route_type = list_gtfs[[1]],
+    areas_of_interest = areas_of_interest,
+    buffer_distance = gtfssupplyindex:::load_buffer_zones(),
+    EPSG_for_transform = EPSG_for_transform 
     ){
 
   # Keep only buffer distance definitions for those routes_types in the gtfs
   buffer_distance <- buffer_distance[ 
     which(
       buffer_distance$short_name %in% 
-    names(list_gtfs))
+    names(gtfs_single_route_type))
     ,]
+ 
+  #get stops as sf from the gtfs, listed by route_type, using stops_as_sf_function (see below)
+  list_of_stops_as_sf <- lapply(gtfs_single_route_type, stops_as_sf_function)
+  #drop everything except geometry and stop_id
+  list_of_stops_as_sf <- lapply(list_of_stops_as_sf, dplyr::select, stop_id, geometry)
   
-  # Obtain CRS of geojson
-  ## STILL NEED TO UNDERSTAND HOW TO MAKE THIS BE IN METRES RATHER THAN FT FOR NYC
-  areas_of_interest_crs <- sf::st_crs(areas_of_interest)$input
+  # map the stops onto the areas_of_interest for the first element in the list
+  #map + 
+  #  geom_sf(data=list_of_stops_as_sf[[1]], size = 2)
   
-  # Convert the lat and long in the gtfs into x and y to match the geojson
-  stops_x_y <- tibble(stop_id = 
-                        list_gtfs$subway$stops$stop_id,
-                      stop_x =   list_gtfs$subway$stops$stop_lon,
-                      stop_y =   list_gtfs$subway$stops$stop_lat
-  )
+  # transform stops to CRS in metres
+  list_of_stops_as_sf <- lapply(list_of_stops_as_sf, st_transform, EPSG_for_transform)
   
+  #draw radius around stops of the buffer zone
+  list_of_circles_around_stops <- lapply(list_of_stops_as_sf, st_buffer, dist = buffer_distance$buffer_distance)
   
+  # transform areas_of_interest to CRS in metres
+  areas_of_interest <- st_transform(areas_of_interest, EPSG_for_transform)
+
+
+  # calculate Area_area terms
+  areas_of_interest$area_area <- st_area(areas_of_interest)
+ 
+  
+  # Intersect the circles
+  stops_in_or_near_areas <- st_intersection(areas_of_interest, dat_circles)
+  # calculate the area_BN_term and drop geometry
+  stops_in_or_near_areas$area_Bn <- st_area(stops_in_or_near_areas)
+  stops_in_or_near_areas <- stops_in_or_near_areas %>% st_drop_geometry()
+  
+  # drop areas_of_interest geometry
+  areas_of_interest <- areas_of_interest %>% st_drop_geometry()
+  
+  # join areas_of_interest areas
+  stops_in_or_near_areas <- left_join(stops_in_or_near_areas, areas_of_interest)
+  
+  # calculate combined area terms 
+  stops_in_or_near_areas$area_terms <- stops_in_or_near_areas$area_Bn / stops_in_or_near_areas$area_area
+  # drop units 
+  stops_in_or_near_areas$area_terms <- as.numeric(stops_in_or_near_areas$area_terms)
+  
+  return(stops_in_or_near_areas %>% select(stop_id, area_id, area_terms))
   
 }
+  
+
+### Function to get stops as sf from the gtfs, listed by route_type
+stops_as_sf_function <- function(gtfs){ 
+  stops_as_sf <- tidytransit::stops_as_sf(gtfs$stops)
+  return(stops_as_sf)
+}
+
