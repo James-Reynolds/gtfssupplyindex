@@ -30,3 +30,6 @@ gtfstools
 kableExtra
 knitr
 readxl
+usethis
+devtools
+gtfssupplyindex

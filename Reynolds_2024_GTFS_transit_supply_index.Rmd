@@ -62,7 +62,8 @@ library(kableExtra)
 library(knitr)
 library(readxl)
 library(dplyr)
-
+library(devtools)
+load_all()
 # invalidate cache when the tufte version changes
 #knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
 ```
@@ -468,97 +469,477 @@ to calculate an overall score
 across multiple time periods 
 or for a region encompassing multiple areas of interest. 
 
-## R and packages
-R [@R-base] is a widely used statistical programming language. 
-The GTFS-related packages gtfstools [@R-gtfstools] 
-and tidytransit [@R-tidytransit] 
-are already available^[
-tidytransit is licensed under GPL-2 | GPL-3, 
+
+# Methodology
+R [@R-base], a widely used and readily available  statistical programming language, was adopted for code development. The package development setup and workflow described by @wickham2023r 
+was adopted in this study. 
+
+Various existing packages were relied upon including: the sf package [@R-sf] for geospatial analysis; the tidyverse [@tidyverse2019]; gtfstools [@R-gtfstools]; and tidytransit [@R-tidytransit]. Some code was adapted from the tidytransit, gtfstools and other package's examples, vignettes and other documentation.
+Tidytransit is licensed under GPL-2 | GPL-3, 
 while gtfstools is lincensed under the more permissive MIT license. 
 For simplicity, 
 the gtfssupplyindex package developed here 
 is licensed under GPL-3 
-so as to match tidytransit.]. 
-As such, 
-this study aimed 
-to expand on these 
-and build a new package 
-including functions useful for calculating the SI, 
-as discussed in the following section. 
+so as to match tidytransit. 
 
-# Methodology
-The package development setup and workflow described by @wickham2023r 
-was adopted in this study. 
-Existing packages were relied upon including: 
-the sf package [@R-sf] for geospatial analysis; 
-the tidyverse [@tidyverse2019] 
-and many others. 
-Some code was adapted from the tidytransit, 
-gtfstools 
-and other package's examples, 
-vignettes and 
-other documentation [@tidytransit_departure_timetable; @filter_GTFS_by_mode]. 
+## Cases
+
+```{r mornington_map, fig.margin = TRUE, fig.cap = "Mornington Penninsula SA1 zones and location of Mornington Tourist Rail stops.", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+### ---------------- get abs data for Mornington Peninsula
+#options(timeout = 1000)
+#remotes::install_github("wfmackey/absmapsdata")
+
+#get_mornington_sa1 <- function(){
+#  mornington_sa12021 <- absmapsdata::sa12021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa1_code_2021)
+#  sf::st_write(mornington_sa12021, "inst/extdata/mornington_sa12021.geojson", append=FALSE)
+#  return(mornington_sa12021)
+#}
+#get_mornington_sa3 <- function(){
+#  mornington_sa32021 <- absmapsdata::sa32021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa3_code_2021)
+#  sf::st_write(mornington_sa32021, "inst/extdata/mornington_sa32021.geojson", append=FALSE)
+#  return(mornington_sa32021)
+#}
+
+### ---------------- load SA3 abs maps data for just mornington peninsula
+areas_of_interest <- load_areas_of_interest(areas_of_interest = absmapsdata::sa12021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa1_code_2021), 
+  area_id_field = "sa1_code_2021")
+
+# map the areas_of_interest
+map <- areas_of_interest %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geometry))
+#map
+#set the EPSG to transform from lat/lon to metres
+EPSG_for_transform = 28355
+
+### ---------------------------- load and update the route_types in the mornington gtfs data
+mornington_2019 <- tidytransit::read_gtfs("inst/extdata/mornington180109/gtfs.zip")
+#deal with issue to do with missing route_color information
+mornington_2019$routes$route_color <- "Blue"
+#convert route type from 107 (tourist railway) to 2 (rail) ---NEW FEATURE NEEDED --- EXPAND HANDLING OF MODES TO ENABLE CALCULATION OF MODES FROM EXTENDED GTFS LIST
+mornington_2019$routes$route_type <- as.integer(2)
+# write back to zip file
+tidytransit::write_gtfs(mornington_2019, "inst/extdata/mornington180109/gtfs.zip")
+
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type("inst/extdata/mornington180109/gtfs.zip")
+
+stops_as_sf_mornington <-  list_gtfs[[1]]$stops %>% 
+  tidytransit::stops_as_sf()
+
+#map the stops on the ABS data
+map + 
+  geom_sf(data = stops_as_sf_mornington, aes(geometry = geometry))
+
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  buffer_distance = gtfssupplyindex:::load_buffer_zones(),
+  EPSG_for_transform = 28355
+)
+
+```
+
+Code development was undertaken using a number of cases for testing purposes, being: the  Mornington Penninsula Tourist Railway, the New York subway, and Melbourne. 
+
+
+The Morning Penninsula Tourist Railway runs on Sundays and Wednesdays between Moorooduc and Mornington, with an intermediate stop at Tanti Park^[https://transitfeeds.com/p/mornington-railway/806/latest/stops]. A GTFS feed from 2018 was selected. ABS data was also used, 
+primarily through the strayr 
+and absmapsdata packages [@r-strayr].
+The Mornington Peninsular SA3 zone and the SA1 zones contained within were adopted as the areas_of_interest. 
 
 Tidytransit includes a sample GTFS feed from New York's MTA
 (including the subway!), 
 and so this was used for code tests were appropriate. 
+<MORE DETAILS ABOUT THIS>
+
 Larger scale testing was performed using the Victorian GTFS feed, 
 published by Public Transport Victoria (PTV), 
-ourced via @transitfeeds_victoria:2023aa for historical feeds. 
-ABS data was also used, 
-primarily through the strayr 
-and absmapsdata packages [@r-strayr].
+sourced via @transitfeeds_victoria:2023aa for historical feeds. 
+Again, ABS data was used for the areas_of_interest. 
+
+
 
 # Results
-## Code
-Details of the developed code are available 
-in the documentation on github [@gtfssupplyindex_github]. 
-The code development involved: 
-(1) expanding on the GTFS database structure 
-to develop one to support the SI calculation;
-(2) adapting the @tidytransit_departure_timetable code 
-to create a function (departures.R) 
-that takes in a GTFS feed, 
-stop name, 
-date, 
-start time 
-and end time 
-to output a number representing the number of departures; 
-(3) then doing all the other functions needed; 
-(4) testing; 
-(5) validation, 
-as discussed in the following
-
-### Database structure
-Calculating the SI for a GTFS feed and set of areas of interest is effectively a database problem. The database structure developed in this study is shown in the below Entity Relationship Diagram (ERD). 
+## Code structure 
+Developed code is available and documented on github [@gtfssupplyindex_github]. 
+The structure is shown in the below Entity Relationship Diagram (ERD). 
 
 
-```{r SI_ERD, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram. Source: adapted by author from Alamri et al (2023) and the GTFS Schedule Reference (16/11/2023 revision).", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+```{r SI_ERD, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram.", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 knitr::include_graphics("graphics/SI_data_structure.png")
 
 ```
 
-The desired end result is the si_by_area_day_and_hour table (bottom right), which reports the SI score for each hour of the day across dates specified by the user. As discussed above, the SI is additive, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
+The code takes input from three files: 
+
+- a gtfs feed (gtfs.zip)
+- a sf object describing the geometry of the areas for which the SI is to be calculated
+- a csv file defining the buffer zone distances (in metres) for each route_type.
+
+It outputs the si_by_area_day_and_hour table (bottom right), which reports the SI score for each hour of the day across dates specified by the user. The calculation of the SI scores is described in the following, which shows examples based on the Mornington Peninsula Tourist Railway GTFS and ABS datasets. 
+
+GTFS data is first loaded, with the gtfs_by_route_type function splitting this into a list of tidygtfs objects, with one list element for each route_type present in the gtfs data.  
+
+```{r load_mornington_GTFS data, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
+  "extdata/mornington180109",
+  "gtfs.zip", 
+  package = "gtfssupplyindex", 
+  mustWork = TRUE))
+
+names(list_gtfs) %>% kable(caption = "tidygtfs objects within list_gtfs")
+names(list_gtfs[[1]]) %>% kable(caption = "tidygtfs structure of first elemnent of list_gtfs")
+```
+
+Geographical data about the areas of interest are first loaded by the load_areas_of_interest.R function into an sf object, containing that area_id key and associated geometry.   
+
+```{r load_ABS data, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+areas_of_interest <- load_areas_of_interest(areas_of_interest = sf::st_read(system.file(
+  "extdata",
+  "mornington_sa12021.geojson", 
+  package = "gtfssupplyindex", 
+  mustWork = TRUE)), 
+  area_id_field = "sa1_code_2021")
+head(areas_of_interest) %>% kable(caption = "First 6 entries in areas_of_interest table")
+
+```
+
+The data about buffer zones, specifically the walking distance threshold assigned to each route_type (mode) is then loaded, again through a function (load_buffer_zone.R). 
+
+```{r load_buffer_distance_data, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+head(buffer_distance) %>% kable(caption = "First six entries in buffer_distance definitions")
+```
+The stops_in_walk_dist function then generates a list, again with each element representing a route_type (mode), of stops_in_or_near_areas tables. Each entry in the tables consists of a stop_id and area_id that are within the buffer_distance threshold of each other, and the corresponding area related terms in the SI calculation ($Area_{Bn} / Area_{Area}$. 
+
+
+```{r calculate_stop_in_or_near_areas, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  buffer_distance = buffer_distance,
+  EPSG_for_transform = 28355
+)
+
+head(stops_in_or_near_areas[[1]]) %>% kable(caption = "'Rail' element of the stops_in_or_near_areas list for the Mornington Pennisula datasets, first six entries")
+```
+The variables passed to the stop_in_or_near_areas function are list_gtfs (the list of tidygtfs objects), areas_of_interest (the output of the load_areas_of_interest functions), the buffer_distance table, and an EPSG_for_transform variable. This last variable is the Coordinate Reference System (CRS) value relevant to the geographic location. It is used to project the latitude and longitude values included in the GTFS data and area_of_interest data into metres, in this case relating to the GDA94 / MGA zone 55 relevant to Australia^[https://epsg.io/28355].  
+
+The stops_in_or_near_areas function itself does a lot of work, so is discussed in more detail in the following section.  
+
+### stops_in_walk_dist function
+
+The first part of the stops_in_walk_dist function simply filters out all of the unneeded buffer_distance entries. 
+
+```{r fulter_buffer_distance, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+  # Keep only buffer distance definitions for those routes_types in the gtfs
+  buffer_distance <- buffer_distance[ 
+    which(
+      buffer_distance$short_name %in% 
+        names(list_gtfs))
+    ,]
+buffer_distance %>% kable(caption = "Filtered buffer_distance table")
+
+```
+
+Next the areas_of interest are transformed from latitude and longitude into metres, and the area is calculated. 
+
+```{r transform_areas, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+
+
+  # transform areas_of_interest to CRS in metres
+  areas_of_interest <- sf::st_transform(areas_of_interest, EPSG_for_transform)
+ 
+  # calculate Area_area terms
+  areas_of_interest$area_area <- sf::st_area(areas_of_interest)
+  
+  head(areas_of_interest) %>% kable(caption = "Areas of first six SA1 zones in Mornington Penninsula SA3")
+
+```
+  The stops_in_walking_distance function then applies a sub-function, stops_in_walk_dist_one_route, to the list_gtfs (list of tidygtfs objects). First, a list of stops is extracted from the tidygtfs, using the stops_as_sf function from @R-tidytransit. 
+  
+```{r stops_as_sf, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+
+  #variables passed by lapply
+    gtfs_single_route_type = list_gtfs[[1]]
+    buffer_distance_length = 800
+
+  #get stops as sf from the gtfs, listed by route_type, using stops_as_sf_function (see below)
+  stops_as_sf <- tidytransit::stops_as_sf(gtfs_single_route_type$stops)
+  #drop everything except geometry and stop_id
+  stops_as_sf <- stops_as_sf %>% dplyr::select(stop_id, geometry)
+  
+  # map the stops onto the areas_of_interest for the first element in the list
+  #map + 
+  #  geom_sf(data=list_of_stops_as_sf[[1]], size = 2)
+
+  head(stops_as_sf) %>% kable(caption = "Stops extracted from Mornington GTFS")
+```
+Circles are then drawn around each stop, with the radius equal to the buffer distance.  Intersecting these circles with the areas_of_interest then outputs an sf showing the catchment of each stop within each area of interest
+
+
+```{r buffer_circles, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap="Catchment of each stop within each area of interest"}
+  # transform stops to CRS in metres
+  stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
+  
+  #draw radius around stops of the buffer zone
+  circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = buffer_distance_length)
+ 
+  # Intersect the circles
+  stops_in_or_near_areas <- sf::st_intersection(areas_of_interest, circles_around_stops)
+  
+  ggplot() + 
+    geom_sf(data=stops_in_or_near_areas, aes(fill = area_id)) + 
+    theme(legend.position = "none")
+  
+```
+Finally, the $area_{Bn}$ terms are calculated for each combination of stop_id and area_id, 
+
+
+
+```{r area_calculations_Bn_and_area_terms, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE}
+   
+  # calculate the area_BN_term and drop geometry
+  stops_in_or_near_areas$area_Bn <- sf::st_area(stops_in_or_near_areas)
+  stops_in_or_near_areas <- stops_in_or_near_areas %>% sf::st_drop_geometry()
+
+  # join areas_of_interest areas (but not the area geometry)
+  stops_in_or_near_areas <- dplyr::left_join(stops_in_or_near_areas, areas_of_interest %>% sf::st_drop_geometry())
+  
+  # calculate combined area terms 
+  stops_in_or_near_areas$area_terms <- stops_in_or_near_areas$area_Bn / stops_in_or_near_areas$area_area
+  # drop units 
+  stops_in_or_near_areas$area_terms <- as.numeric(stops_in_or_near_areas$area_terms)
+  
+  head(stops_in_or_near_areas %>% dplyr::select(stop_id, area_id, area_terms)) %>%
+    kable(caption = "Output of stops_in_walk_dist_one_route for Mornington Peninsula, first six entries")
+  
+```
+
+
+### Calculating stop arrivals and the SI
+
+
+
+
+
+
+### Hourly
+
+As discussed above, the SI is additive, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
 
 The buffer_distance table draws data from Comma Separated Variables (CSV) file, based on the Extended GTFS Route Types definitions^[https://developers.google.com/transit/gtfs/reference/extended-route-types], with defaults of 800 metres and 400 metres for heavy rail and all other modes respectively. 
 
 The areas_of_interest table stores geometric information about the areas for which SI scores are desired, as simple features^[See https://cran.r-project.org/web/packages/sf/vignettes/sf1.html]. The stops_in_or_near_areas and si_by_mode_and_time tables are used to store components of the SI during the calculations, which are described in the following.  
 
-### Functions
 
-The gtfssupplyindex package includes various functions that automate the SI calculation^[See https://github.com/James-Reynolds/gtfssupplyindex/tree/main/R]. These are shown in the above ERD. These are: 
-
-- load_buffer_zone.R, which obtains data about route_type, (mode) name and the assumed catchment areas (400 or 800m);
-- load_areas_of_interest.R, which get geographic data about the areas of interest for which the SI calculation is to be performed; 
-- the gtfs_by_mode.R function, which transforms the gtfs data into a list of tidygtfs objects, with an entry for each route_type (mode);
-- the stops_in_walk_dist.R function, which determines which of the stops within the GTFS dataset is inside or within walking distance of the areas_of_interest boundaries - CURRRENTLY IN DEVELOPMENT, NEXT STEP ISTO FIGURE OUT HOW TO MAKE SURE THAT THE PROJECTION USED IS IN METRES, OR TRANSFORM IF NECESSARY. 
-- the area_terms.R function, which calculates the $Area_{Bn}/Area_{area}$ component of the SI for each combination of stop, area of interest and route type (mode) - TO BE DEVELOPED; 
-- arrivals.R, which calculates the number of service arrivals at a stop within a given time period on a specific date, being $SL_{n,time}$ component of the SI^[departures.R and arrivals.R are a generalisations of code in the tidytransit vignettes.] - TO BE DEVELOPED, JUST NEED TO ADAPT THE DEPARTURES.R; 
-- SI_calc.R, which combines the various terms in the SI caluclation - TO BE DEVELOPED; and
-- hourly.R, which provides a wrapper function to calculate hourly SIs for all areas of interests on a specific date or set of dates - TO BE DEVELOPED. 
+CODE references
+[@tidytransit_departure_timetable; @filter_GTFS_by_mode]
 
 
-### Testing
+## Testing
+
+### Mornington Pensinsula Tourist Railway and SA2 zones
+
+Testing the code with the code with the same Mornington Peninsula Tourist Railway GTFS, but SA2 zones instead of SA1 provides the following results:
+
+```{r mornington_SA2_test data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap = "Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA2 zones"}
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
+  "extdata/mornington180109",
+  "gtfs.zip", 
+  package = "gtfssupplyindex", 
+  mustWork = TRUE))
+
+areas_of_interest <- load_areas_of_interest(absmapsdata::sa22021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa2_code_2021),  area_id_field = "sa2_code_2021")
+
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  buffer_distance = buffer_distance,
+  EPSG_for_transform = 28355
+)
+
+  buffer_distance <- buffer_distance[ 
+    which(
+      buffer_distance$short_name %in% 
+        names(list_gtfs))
+    ,]
+buffer_distance %>% kable(caption = "Filtered buffer_distance table")
+
+# transform areas_of_interest to CRS in metres
+  areas_of_interest <- sf::st_transform(areas_of_interest, EPSG_for_transform)
+ 
+  # calculate Area_area terms
+  areas_of_interest$area_area <- sf::st_area(areas_of_interest)
+  
+  head(areas_of_interest) %>% kable(caption = "Areas of first six SA2 zones in Mornington Penninsula SA3")
+
+  #variables passed by lapply
+    gtfs_single_route_type = list_gtfs[[1]]
+    buffer_distance_length = 800
+
+  #get stops as sf from the gtfs, listed by route_type, using stops_as_sf_function (see below)
+  stops_as_sf <- tidytransit::stops_as_sf(gtfs_single_route_type$stops)
+  #drop everything except geometry and stop_id
+  stops_as_sf <- stops_as_sf %>% dplyr::select(stop_id, geometry)
+  
+  # transform stops to CRS in metres
+  stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
+  
+  #draw radius around stops of the buffer zone
+  circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = buffer_distance_length)
+ 
+  # Intersect the circles
+  stops_in_or_near_areas <- sf::st_intersection(areas_of_interest, circles_around_stops)
+  
+  ggplot() + 
+    geom_sf(data=stops_in_or_near_areas, aes(fill = area_id)) + 
+    theme(legend.position = "none")
+  
+  # calculate the area_BN_term and drop geometry
+  stops_in_or_near_areas$area_Bn <- sf::st_area(stops_in_or_near_areas)
+  stops_in_or_near_areas <- stops_in_or_near_areas %>% sf::st_drop_geometry()
+
+  # join areas_of_interest areas (but not the area geometry)
+  stops_in_or_near_areas <- dplyr::left_join(stops_in_or_near_areas, areas_of_interest %>% sf::st_drop_geometry())
+  
+  # calculate combined area terms 
+  stops_in_or_near_areas$area_terms <- stops_in_or_near_areas$area_Bn / stops_in_or_near_areas$area_area
+  # drop units 
+  stops_in_or_near_areas$area_terms <- as.numeric(stops_in_or_near_areas$area_terms)
+  
+  stops_in_or_near_areas %>% dplyr::select(stop_id, area_id, area_terms) %>%
+    kable(caption = "Output of stops_in_walk_dist_one_route for Mornington Peninsula Railway and SA2 zones, calculated piecemeal")
+  
+  ### compare to calculation using function only
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  buffer_distance = buffer_distance,
+  EPSG_for_transform = 28355
+)
+  
+  stops_in_or_near_areas[[1]] %>% dplyr::select(stop_id, area_id, area_terms) %>%
+    kable(caption = "Output of stops_in_walk_dist_one_route for Mornington Peninsula Railway and SA2 zones, calculated using the stops_in_walk_dist function directly")
+  
+  
+```
+
+This appears to meet expectations, with fewer SA2 zones within the walking distance catchment of the stops.  As well, the area terms indicate that only a small fraction of each of the SA2 zones are within the catchment areas of the stops.  
+
+
+
+
+
+### Mornington Pensinsula Tourist Railway and SA3 zones
+
+Testing the code with the code with the same Mornington Peninsula Tourist Railway GTFS, but instead combining the areas_of_interest so that we are only looking at the Mornington Peninsular SA3 zone (in its entirety) gives:
+
+```{r mornington_SA3_test data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap = "Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA3 zones"}
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
+  "extdata/mornington180109",
+  "gtfs.zip", 
+  package = "gtfssupplyindex", 
+  mustWork = TRUE))
+
+areas_of_interest <- load_areas_of_interest(absmapsdata::sa32021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa3_code_2021),  area_id_field = "sa3_code_2021")
+
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  buffer_distance = buffer_distance,
+  EPSG_for_transform = 28355
+)
+
+  buffer_distance <- buffer_distance[ 
+    which(
+      buffer_distance$short_name %in% 
+        names(list_gtfs))
+    ,]
+buffer_distance %>% kable(caption = "Filtered buffer_distance table")
+
+# transform areas_of_interest to CRS in metres
+  areas_of_interest <- sf::st_transform(areas_of_interest, EPSG_for_transform)
+ 
+  # calculate Area_area terms
+  areas_of_interest$area_area <- sf::st_area(areas_of_interest)
+  
+  head(areas_of_interest) %>% kable(caption = "Areas of first six SA2 zones in Mornington Penninsula SA3")
+
+  #variables passed by lapply
+    gtfs_single_route_type = list_gtfs[[1]]
+    buffer_distance_length = 800
+
+  #get stops as sf from the gtfs, listed by route_type, using stops_as_sf_function (see below)
+  stops_as_sf <- tidytransit::stops_as_sf(gtfs_single_route_type$stops)
+  #drop everything except geometry and stop_id
+  stops_as_sf <- stops_as_sf %>% dplyr::select(stop_id, geometry)
+  
+  # transform stops to CRS in metres
+  stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
+  
+  #draw radius around stops of the buffer zone
+  circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = buffer_distance_length)
+ 
+  # Intersect the circles
+  stops_in_or_near_areas <- sf::st_intersection(areas_of_interest, circles_around_stops)
+  
+  ggplot() + 
+    geom_sf(data=stops_in_or_near_areas, aes(fill = area_id)) + 
+    theme(legend.position = "none")
+  
+  # calculate the area_BN_term and drop geometry
+  stops_in_or_near_areas$area_Bn <- sf::st_area(stops_in_or_near_areas)
+  stops_in_or_near_areas <- stops_in_or_near_areas %>% sf::st_drop_geometry()
+
+  # join areas_of_interest areas (but not the area geometry)
+  stops_in_or_near_areas <- dplyr::left_join(stops_in_or_near_areas, areas_of_interest %>% sf::st_drop_geometry())
+  
+  # calculate combined area terms 
+  stops_in_or_near_areas$area_terms <- stops_in_or_near_areas$area_Bn / stops_in_or_near_areas$area_area
+  # drop units 
+  stops_in_or_near_areas$area_terms <- as.numeric(stops_in_or_near_areas$area_terms)
+  
+  stops_in_or_near_areas %>% dplyr::select(stop_id, area_id, area_terms) %>%
+    kable(caption = "Output of stops_in_walk_dist_one_route for Mornington Peninsula Railway and SA2 zones")
+  
+```
+
+Again, this appears to meet expectations, with all three stops falling within the same SA3 zone. 
+
+Checking the area terms calculation is relatively trivial for this case, as the ABS maps data comes with an area field
+
+```{r mornington_SA3_check_area, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+absmapsdata::sa32021 %>% filter(sa3_name_2021 == "Mornington Peninsula")
+
+pi * .8^2 / 
+  (as.numeric(
+    absmapsdata::sa32021 %>% 
+      filter(
+        sa3_name_2021 == "Mornington Peninsula") %>% 
+      select(areasqkm_2021)
+  ))
+```
+
+There appears to be some minor rounding errors, but this appears to related to the ABS reported square_km (724.1681) being slightly different from the m2 reported by the st_area function (724,272,059). Likely this is related to the projections used and way that the ABS got to their square_km value (unknown). 
+
+
+
+### Melbourne CBD
+
+
+
+
+
+
 
 ### Validation
 

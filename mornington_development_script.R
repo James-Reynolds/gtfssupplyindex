@@ -62,10 +62,13 @@ stops_as_sf_mornington <-  list_gtfs[[1]]$stops %>%
 map + 
   geom_sf(data = stops_as_sf_mornington, aes(geometry = geometry))
 
+#load buffer distance data
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   list_gtfs = list_gtfs, 
   areas_of_interest = areas_of_interest,
-  buffer_distance = gtfssupplyindex:::load_buffer_zones(),
+  buffer_distance = buffer_distance,
   EPSG_for_transform = 28355
 )
 
