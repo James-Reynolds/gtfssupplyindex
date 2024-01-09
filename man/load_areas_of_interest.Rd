@@ -5,18 +5,21 @@
 \title{Build the areas_of_interest table}
 \usage{
 load_areas_of_interest(
-  areas_of_interest = sf::st_read(system.file("extdata", "nyc.geojson", package =
-    "gtfssupplyindex", mustWork = TRUE)),
-  area_id_field = "geoid"
+  areas_of_interest = sf::st_read(system.file("extdata", "mornington_sa32021.geojson",
+    package = "gtfssupplyindex", mustWork = TRUE)),
+  area_id_field = "sa3_code_2021"
 )
 }
 \arguments{
-\item{areas_of_interest}{geojson with areas of interest. Defaults to NYC borough boundaries from mfherman/nycgeo package.}
+\item{areas_of_interest}{sf containing boundaries for which to calculate the SI.
+Defaults to load mornington_sa3201 boundaries from extdata.}
 
-\item{area_id_field}{the primary key field in the areas_of_interest sf. Defaults to geoid, as per NYC borough boundaries}
+\item{area_id_field}{the primary key field in the boundaries sf.
+Defaults to sa3_code_2021 as per mornington dataset}
 }
 \value{
-areas_of_interest table
+areas_of_interest table as an sf object,
+containing only area_id and geometry fields
 }
 \description{
 Build the areas_of_interest table

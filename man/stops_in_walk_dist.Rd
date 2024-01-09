@@ -2,33 +2,27 @@
 % Please edit documentation in R/stops_in_walk_dist.R
 \name{stops_in_walk_dist}
 \alias{stops_in_walk_dist}
-\title{Determine which stops are within walking distance of which areas of intersest}
+\title{Create stops_in_or_near_areas table}
 \usage{
 stops_in_walk_dist(
-  list_gtfs = gtfssupplyindex:::gtfs_by_route_type(path =
-    file.path(system.file("extdata", package = "tidytransit"),
-    "google_transit_nyc_subway.zip")),
-  areas_of_interest = gtfssupplyindex:::load_areas_of_interest(areas_of_interest =
-    sf::st_read(system.file("extdata", "nyc.geojson", package = "gtfssupplyindex",
-    mustWork = TRUE)), area_id_field = "geoid"),
-  buffer_distance = gtfssupplyindex:::load_buffer_zones()
+  list_gtfs,
+  areas_of_interest,
+  buffer_distance = gtfssupplyindex:::load_buffer_zones(),
+  EPSG_for_transform
 )
 }
 \arguments{
-\item{list_gtfs}{A list, each element being a tidygtfs for an individual mode.}
+\item{list_gtfs}{list of tidygtfs (split by route), output of gtfs_by_route_type.R}
 
-\item{areas_of_interest}{sf object with area_id field and geometry only}
+\item{areas_of_interest}{sf with areas_of_interest, area_id and geometry}
 
-\item{buffer_distance}{buffer distance definitions}
+\item{buffer_distance}{datatable of route_type, buffer_distance and short_name, output of load_buffer_zone.R}
+
+\item{EPSG_for_transform}{value for the CRS to transform from lat/lon to metres}
 }
 \value{
-a stops_in_or_near_areas tibble consisting of the stop_id, area_id and route_type details.
-The area_terms are calculated latedin the area_terms function.
+list of dataframes, containing the stops_in_or_near_areas table for each individual route_type
 }
 \description{
-Determine which stops are within walking distance of which areas of intersest
-}
-\examples{
-stops_in_walk_dist()
-
+Calculate list of stops_in_or_near_areas tables (by route-type) from  list of tidygtfs (by route_type)
 }
