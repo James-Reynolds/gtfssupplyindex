@@ -7,16 +7,14 @@
 stops_in_walk_dist_one_route(
   gtfs_single_route_type = list_gtfs[[1]],
   areas_of_interest,
-  buffer_distance_length = 800,
-  EPSG_for_transform
+  EPSG_for_transform,
+  verbose = FALSE
 )
 }
 \arguments{
-\item{gtfs_single_route_type}{a tidygtfs with only one route_type}
+\item{gtfs_single_route_type}{a tidygtfs with only one route_type AND the buffer_distance included as list element}
 
 \item{areas_of_interest}{sf object with area_id field}
-
-\item{buffer_distance_length}{walking distance in metres for the route_type}
 
 \item{EPSG_for_transform}{CRS to transform from lat/lon to metres}
 }

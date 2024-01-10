@@ -589,7 +589,7 @@ list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
   mustWork = TRUE))
 
 names(list_gtfs) %>% kable(caption = "tidygtfs objects within list_gtfs")
-names(list_gtfs[[1]]) %>% kable(caption = "tidygtfs structure of first elemnent of list_gtfs")
+names(list_gtfs[[1]]) %>% kable(caption = "tidygtfs structure of first element of list_gtfs")
 ```
 
 Geographical data about the areas of interest are first loaded by the load_areas_of_interest.R function into an sf object, containing that area_id key and associated geometry.   
@@ -629,16 +629,22 @@ The variables passed to the stop_in_or_near_areas function are list_gtfs (the li
 ### stops_in_walk_dist function
 As shown in the above ERD, the stops_in_walk_dist function takes the list (by route_type) of tidygtfs objects, the areas_of_interest table and the buffer_distance table as inputs. It outputs the stops_in_or_near_areas list (by route_type) of tables, which includes the area-related terms of the SI calculation. 
 
-The first part of the stops_in_walk_dist function simply filters out all of the unneeded buffer_distance entries. 
+The first part of the stops_in_walk_dist function looks up the buffer_distance_length specific to each route_type in the list (by route_type) of tidygtfs objects. This value is appended to each tidygtfs object as an addition element (named buffer_distance). 
 
-```{r fulter_buffer_distance, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
-  # Keep only buffer distance definitions for those routes_types in the gtfs
-  buffer_distance <- buffer_distance[ 
-    which(
-      buffer_distance$short_name %in% 
-        names(list_gtfs))
-    ,]
-buffer_distance %>% kable(caption = "Filtered buffer_distance table")
+```{r fulter_buffer_distance, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE}
+   # add buffer_distance_length to list (by route) of tidy_gtfs
+  list_gtfs <- mapply(function(x, nm){ 
+    append(x, 
+           (buffer_distance = 
+              buffer_distance[
+                which(
+                  buffer_distance$short_name %in% nm)
+                , "buffer_distance"]))}, 
+    list_gtfs, names(list_gtfs), SIMPLIFY=FALSE)
+
+names(list_gtfs[[1]]) %>% kable(caption = "Updated tidygtfs, with added element for the corresponding buffer_distance")
+list_gtfs[[1]]$buffer_distance %>% kable(caption = "buffer_distance element")
+
 
 ```
 
@@ -751,9 +757,9 @@ In the previous section the various functions were outlined, with sample output 
 
 ### Mornington Pensinsula Tourist Railway and SA2 zones
 
-Testing the code with the code with the same Mornington Peninsula Tourist Railway GTFS, but SA2 zones instead of SA1 provides the following results:
+Testing the code with the code with the same Mornington Peninsula Tourist Railway GTFS, but SA2 zones instead of SA1 provides the following results^[Here results are verbose, including the intermediate tables and plots so we can see what is happening step-by-step.  Formatting is a mess, but: the first tibble (6x3) shows the buffer_distance table; then there are the names of the list elements, showing that the buffer_distance element has been added.  This is shown as 800m on the next line. The areas_of_interest table is then shown (starting at "Simple feature collection..."), then the stop_id locations. After the charts the stops_in_or_near_areas table is shown.  
 
-```{r mornington_SA2_test data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap = "Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA2 zones"}
+```{r mornington_SA2_test data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA2 zones", "Catchment of each stop within each area of interest, by stop, Mornington Penninsula Railway and SA2 zones", "Catchment of each stop within each area of interest, by stop (x) and area of interest (y), Mornington Penninsula Railway and SA2 zones")}
 #load the revised mornington GTFS data
 list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
   "extdata/mornington180109",
@@ -768,87 +774,22 @@ buffer_distance <- gtfssupplyindex:::load_buffer_zones()
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   list_gtfs = list_gtfs, 
   areas_of_interest = areas_of_interest,
-  buffer_distance = buffer_distance,
-  EPSG_for_transform = 28355
+  EPSG_for_transform = 28355,
+  verbose = TRUE
 )
-
-  buffer_distance <- buffer_distance[ 
-    which(
-      buffer_distance$short_name %in% 
-        names(list_gtfs))
-    ,]
-buffer_distance %>% kable(caption = "Filtered buffer_distance table")
-
-# transform areas_of_interest to CRS in metres
-  areas_of_interest <- sf::st_transform(areas_of_interest, EPSG_for_transform)
- 
-  # calculate Area_area terms
-  areas_of_interest$area_area <- sf::st_area(areas_of_interest)
-  
-  head(areas_of_interest) %>% kable(caption = "Areas of first six SA2 zones in Mornington Penninsula SA3")
-
-  #variables passed by lapply
-    gtfs_single_route_type = list_gtfs[[1]]
-    buffer_distance_length = 800
-
-  #get stops as sf from the gtfs, listed by route_type, using stops_as_sf_function (see below)
-  stops_as_sf <- tidytransit::stops_as_sf(gtfs_single_route_type$stops)
-  #drop everything except geometry and stop_id
-  stops_as_sf <- stops_as_sf %>% dplyr::select(stop_id, geometry)
-  
-  # transform stops to CRS in metres
-  stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
-  
-  #draw radius around stops of the buffer zone
-  circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = buffer_distance_length)
- 
-  # Intersect the circles
-  stops_in_or_near_areas <- sf::st_intersection(areas_of_interest, circles_around_stops)
-  
-  ggplot() + 
-    geom_sf(data=stops_in_or_near_areas, aes(fill = area_id)) + 
-    theme(legend.position = "none")
-  
-  # calculate the area_BN_term and drop geometry
-  stops_in_or_near_areas$area_Bn <- sf::st_area(stops_in_or_near_areas)
-  stops_in_or_near_areas <- stops_in_or_near_areas %>% sf::st_drop_geometry()
-
-  # join areas_of_interest areas (but not the area geometry)
-  stops_in_or_near_areas <- dplyr::left_join(stops_in_or_near_areas, areas_of_interest %>% sf::st_drop_geometry())
-  
-  # calculate combined area terms 
-  stops_in_or_near_areas$area_terms <- stops_in_or_near_areas$area_Bn / stops_in_or_near_areas$area_area
-  # drop units 
-  stops_in_or_near_areas$area_terms <- as.numeric(stops_in_or_near_areas$area_terms)
-  
-  stops_in_or_near_areas %>% dplyr::select(stop_id, area_id, area_terms) %>%
-    kable(caption = "Output of stops_in_walk_dist_one_route for Mornington Peninsula Railway and SA2 zones, calculated piecemeal")
-  
-  ### compare to calculation using function only
-stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
-  list_gtfs = list_gtfs, 
-  areas_of_interest = areas_of_interest,
-  buffer_distance = buffer_distance,
-  EPSG_for_transform = 28355
-)
-  
-  stops_in_or_near_areas[[1]] %>% dplyr::select(stop_id, area_id, area_terms) %>%
-    kable(caption = "Output of stops_in_walk_dist_one_route for Mornington Peninsula Railway and SA2 zones, calculated using the stops_in_walk_dist function directly")
-  
-  
 ```
 
 This appears to meet expectations, with fewer SA2 zones within the walking distance catchment of the stops.  As well, the area terms indicate that only a small fraction of each of the SA2 zones are within the catchment areas of the stops.  
 
 
-
-
-
 ### Mornington Pensinsula Tourist Railway and SA3 zones
 
-Testing the code with the code with the same Mornington Peninsula Tourist Railway GTFS, but instead combining the areas_of_interest so that we are only looking at the Mornington Peninsular SA3 zone (in its entirety) gives:
+Testing the code with the code with the same Mornington Peninsula Tourist Railway GTFS, but instead combining the areas_of_interest so that we are only looking at the Mornington Peninsular SA3 zone (in its entirety) gives^[Verbose set to false in this instance]:
 
-```{r mornington_SA3_test data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap = "Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA3 zones"}
+
+
+```{r mornington_SA3_test data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+
 #load the revised mornington GTFS data
 list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
   "extdata/mornington180109",
@@ -863,62 +804,12 @@ buffer_distance <- gtfssupplyindex:::load_buffer_zones()
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   list_gtfs = list_gtfs, 
   areas_of_interest = areas_of_interest,
-  buffer_distance = buffer_distance,
-  EPSG_for_transform = 28355
+  EPSG_for_transform = 28355,
+  verbose = FALSE
 )
 
-  buffer_distance <- buffer_distance[ 
-    which(
-      buffer_distance$short_name %in% 
-        names(list_gtfs))
-    ,]
-buffer_distance %>% kable(caption = "Filtered buffer_distance table")
+kable(stops_in_or_near_areas, caption = "Catchment of each stop within Mornington Penninsula SA3 zone")
 
-# transform areas_of_interest to CRS in metres
-  areas_of_interest <- sf::st_transform(areas_of_interest, EPSG_for_transform)
- 
-  # calculate Area_area terms
-  areas_of_interest$area_area <- sf::st_area(areas_of_interest)
-  
-  head(areas_of_interest) %>% kable(caption = "Areas of first six SA2 zones in Mornington Penninsula SA3")
-
-  #variables passed by lapply
-    gtfs_single_route_type = list_gtfs[[1]]
-    buffer_distance_length = 800
-
-  #get stops as sf from the gtfs, listed by route_type, using stops_as_sf_function (see below)
-  stops_as_sf <- tidytransit::stops_as_sf(gtfs_single_route_type$stops)
-  #drop everything except geometry and stop_id
-  stops_as_sf <- stops_as_sf %>% dplyr::select(stop_id, geometry)
-  
-  # transform stops to CRS in metres
-  stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
-  
-  #draw radius around stops of the buffer zone
-  circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = buffer_distance_length)
- 
-  # Intersect the circles
-  stops_in_or_near_areas <- sf::st_intersection(areas_of_interest, circles_around_stops)
-  
-  ggplot() + 
-    geom_sf(data=stops_in_or_near_areas, aes(fill = area_id)) + 
-    theme(legend.position = "none")
-  
-  # calculate the area_BN_term and drop geometry
-  stops_in_or_near_areas$area_Bn <- sf::st_area(stops_in_or_near_areas)
-  stops_in_or_near_areas <- stops_in_or_near_areas %>% sf::st_drop_geometry()
-
-  # join areas_of_interest areas (but not the area geometry)
-  stops_in_or_near_areas <- dplyr::left_join(stops_in_or_near_areas, areas_of_interest %>% sf::st_drop_geometry())
-  
-  # calculate combined area terms 
-  stops_in_or_near_areas$area_terms <- stops_in_or_near_areas$area_Bn / stops_in_or_near_areas$area_area
-  # drop units 
-  stops_in_or_near_areas$area_terms <- as.numeric(stops_in_or_near_areas$area_terms)
-  
-  stops_in_or_near_areas %>% dplyr::select(stop_id, area_id, area_terms) %>%
-    kable(caption = "Output of stops_in_walk_dist_one_route for Mornington Peninsula Railway and SA2 zones")
-  
 ```
 
 Again, this appears to meet expectations, with all three stops falling within the same SA3 zone. 
@@ -950,10 +841,9 @@ knitr::include_graphics("graphics/Melbourne_cbd_north_sa2.png")
 
 ```
 
-Trains stop at Melbourne Central and Flagstaff stations. Trams run along Elizabeth, Swanston, William, La Trobe and other streets. There are also bus services throughout the area, including along Queen Street.  
+Trains stop at Melbourne Central and Flagstaff stations. Trams run along Elizabeth, Swanston, William, La Trobe and other streets. There are also bus services throughout the area, including along Queen Street. 
 
-
-```{r Melbourne_CBD_north_test_check_whole_function data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap = "Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA2 zones"}
+```{r Melbourne_CBD_north_test_check_whole_function data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, rail", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, rail, by stop, first six stops", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, bus", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, bus, by stop, first six stops")}
 #load the Victorian GTFS
 ptv_231228 <- gtfssupplyindex:::gtfs_by_route_type(path = "data/ptv_231228/gtfs.zip")
 
@@ -961,33 +851,28 @@ areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_
 
 buffer_distance <- gtfssupplyindex:::load_buffer_zones()
 
-### overall function
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   list_gtfs = ptv_231228, 
   areas_of_interest = areas_of_interest,
-  buffer_distance = buffer_distance,
-  EPSG_for_transform = 28355
+  EPSG_for_transform = 28355,
+  verbose = TRUE
 )
+```
+In general, the results appear to meet expectations. Looking first at the tram stop results, the first stop has a stop id of 17591. This stop is located at Russell and Bourke Street^[https://transitfeeds.com/p/ptv/497/latest/stops?q=17591]. A 400 metres catchment overlaid on this stop is shown in the margin^[Note: Roughly drawn from the ABS maps.].  This matches the code output shown above (and duplicated in the margin).
+
+
+```{r Russell_bourke_catchment, fig.width = 10, fig.height = 2, fig.margin = TRUE, fig.cap = "SA1 zone boundaries within the Melbourne CBD - North SA2, overlayed with 400m radius from Russell and Bourke Street. Source: ABS and author", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+knitr::include_graphics("graphics/Russell_bourke_tram_catchment.png")
 
 ```
 
-```{r Melbourne_CBD_north_test_individual_components, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap = "Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA2 zones"}
 
-#stops_in_walk_dist <- function(
- #   list_gtfs,
-#    areas_of_interest,
-#   buffer_distance = gtfssupplyindex:::load_buffer_zones(),
-#    EPSG_for_transform){
-
-EPSG_for_transform = 28355
-buffer_distance = gtfssupplyindex:::load_buffer_zones()
+```{r Russell_bourke_map, fig.width = 10, fig.height = 2, fig.margin = TRUE, fig.cap = "Area mapping for stop 17591 (Russel and Bourke), duplicated from above verbose code output", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+knitr::include_graphics("graphics/russell_bourke_map.png")
 
 ```
 
-This appears to meet expectations, with fewer SA2 zones within the walking distance catchment of the stops.  As well, the area terms indicate that only a small fraction of each of the SA2 zones are within the catchment areas of the stops.  
-
-
-
+The rail results appear to meet expectations, with the catchment of Melbourne Central Station (top, centre) covering all of the CBD - North SA2; Flagstaff (top, left) and Parliament (top, right) covering part of the SA2, while Flinders Street having two stop entries, one for Vline and one for Metro, which are just within 800m of a sliver of the SA2. 
 
 
 ### Validation

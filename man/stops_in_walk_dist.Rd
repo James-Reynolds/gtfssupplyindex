@@ -7,8 +7,8 @@
 stops_in_walk_dist(
   list_gtfs,
   areas_of_interest,
-  buffer_distance = gtfssupplyindex:::load_buffer_zones(),
-  EPSG_for_transform
+  EPSG_for_transform,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -16,9 +16,11 @@ stops_in_walk_dist(
 
 \item{areas_of_interest}{sf with areas_of_interest, area_id and geometry}
 
-\item{buffer_distance}{datatable of route_type, buffer_distance and short_name, output of load_buffer_zone.R}
-
 \item{EPSG_for_transform}{value for the CRS to transform from lat/lon to metres}
+
+\item{verbose}{If TRUE, output of each step will be printed or plotted.}
+
+\item{buffer_distance}{datatable of route_type, buffer_distance and short_name, output of load_buffer_zone.R}
 }
 \value{
 list of dataframes, containing the stops_in_or_near_areas table for each individual route_type
