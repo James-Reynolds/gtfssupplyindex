@@ -561,12 +561,11 @@ Again, ABS data was used for the areas_of_interest.
 
 
 # Results
-## Code structure 
+## Code structure and functions
 Developed code is available and documented on github [@gtfssupplyindex_github]. 
-The structure is shown in the below Entity Relationship Diagram (ERD). 
+The structure and functions used to generate each table are shown in the below Entity Relationship Diagram (ERD). 
 
-
-```{r SI_ERD, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SI data structure entity relationship diagram.", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+```{r SI_ERD, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "Entity Relationship Diagram (ERD) showing the data structure and functions", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 knitr::include_graphics("graphics/SI_data_structure.png")
 
 ```
@@ -579,7 +578,7 @@ The code takes input from three files:
 
 It outputs the si_by_area_day_and_hour table (bottom right), which reports the SI score for each hour of the day across dates specified by the user. The calculation of the SI scores is described in the following, which shows examples based on the Mornington Peninsula Tourist Railway GTFS and ABS datasets. 
 
-GTFS data is first loaded, with the gtfs_by_route_type function splitting this into a list of tidygtfs objects, with one list element for each route_type present in the gtfs data.  
+GTFS data is first loaded, with the gtfs_by_route_type function splitting this into a list of tidygtfs objects, with one list element for each route_type present in the gtfs data. This is achieved using the filter_by_route_type function from the gtfstools package [@filter_GTFS_by_mode].
 
 ```{r load_mornington_GTFS data, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 #load the revised mornington GTFS data
@@ -627,9 +626,8 @@ head(stops_in_or_near_areas[[1]]) %>% kable(caption = "'Rail' element of the sto
 ```
 The variables passed to the stop_in_or_near_areas function are list_gtfs (the list of tidygtfs objects), areas_of_interest (the output of the load_areas_of_interest functions), the buffer_distance table, and an EPSG_for_transform variable. This last variable is the Coordinate Reference System (CRS) value relevant to the geographic location. It is used to project the latitude and longitude values included in the GTFS data and area_of_interest data into metres, in this case relating to the GDA94 / MGA zone 55 relevant to Australia^[https://epsg.io/28355].  
 
-The stops_in_or_near_areas function itself does a lot of work, so is discussed in more detail in the following section.  
-
 ### stops_in_walk_dist function
+As shown in the above ERD, the stops_in_walk_dist function takes the list (by route_type) of tidygtfs objects, the areas_of_interest table and the buffer_distance table as inputs. It outputs the stops_in_or_near_areas list (by route_type) of tables, which includes the area-related terms of the SI calculation. 
 
 The first part of the stops_in_walk_dist function simply filters out all of the unneeded buffer_distance entries. 
 
@@ -736,10 +734,20 @@ The areas_of_interest table stores geometric information about the areas for whi
 
 
 CODE references
-[@tidytransit_departure_timetable; @filter_GTFS_by_mode]
+[@tidytransit_departure_timetable] 
+
 
 
 ## Testing
+In the previous section the various functions were outlined, with sample output generated for the Mornington Peninsula Tourist Railway feed and the ABS SA1 zones in the Mornington Peninsula. The following sections show outputs of the various functions for different input data, as follows: 
+
+- Mornington Peninsula Tourist Railway and SA2 zones within the Mornington Peninsula SA3 zone
+- Mornington Peninsula Tourist Railway and just the Mornington Peninsula SA3 zone 
+- Victorian GTFS and the SA1 zones within the Melbourne CBD - North SA2 zones
+
+
+
+
 
 ### Mornington Pensinsula Tourist Railway and SA2 zones
 
@@ -933,9 +941,50 @@ There appears to be some minor rounding errors, but this appears to related to t
 
 
 
-### Melbourne CBD
+### Victorian GTFS and SA1 zones within the Melbourne CBD - North SA2 zone
+
+The north of the Melbourne CBD was selected for testing the code as it is may be familiar to readers, and has three different transit modes. The SA1 and SA2 zone boundaries are shown below. 
+
+```{r Melbourne_cbd_north_sa2, fig.width = 10, fig.height = 2, fig.fullwidth = TRUE, fig.cap = "SA1 zone boundaries within the Melbourne CBD - North SA2, Source: ABS ", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+knitr::include_graphics("graphics/Melbourne_cbd_north_sa2.png")
+
+```
+
+Trains stop at Melbourne Central and Flagstaff stations. Trams run along Elizabeth, Swanston, William, La Trobe and other streets. There are also bus services throughout the area, including along Queen Street.  
 
 
+```{r Melbourne_CBD_north_test_check_whole_function data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap = "Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA2 zones"}
+#load the Victorian GTFS
+ptv_231228 <- gtfssupplyindex:::gtfs_by_route_type(path = "data/ptv_231228/gtfs.zip")
+
+areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_name_2021 == "Melbourne CBD - North") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
+
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+
+### overall function
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = ptv_231228, 
+  areas_of_interest = areas_of_interest,
+  buffer_distance = buffer_distance,
+  EPSG_for_transform = 28355
+)
+
+```
+
+```{r Melbourne_CBD_north_test_individual_components, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%', fig.margin = TRUE, fig.cap = "Catchment of each stop within each area of interest, Mornington Penninsula Railway and SA2 zones"}
+
+#stops_in_walk_dist <- function(
+ #   list_gtfs,
+#    areas_of_interest,
+#   buffer_distance = gtfssupplyindex:::load_buffer_zones(),
+#    EPSG_for_transform){
+
+EPSG_for_transform = 28355
+buffer_distance = gtfssupplyindex:::load_buffer_zones()
+
+```
+
+This appears to meet expectations, with fewer SA2 zones within the walking distance catchment of the stops.  As well, the area terms indicate that only a small fraction of each of the SA2 zones are within the catchment areas of the stops.  
 
 
 
