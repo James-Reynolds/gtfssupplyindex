@@ -534,7 +534,6 @@ map +
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   list_gtfs = list_gtfs, 
   areas_of_interest = areas_of_interest,
-  buffer_distance = gtfssupplyindex:::load_buffer_zones(),
   EPSG_for_transform = 28355
 )
 
@@ -618,7 +617,6 @@ The stops_in_walk_dist function then generates a list, again with each element r
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   list_gtfs = list_gtfs, 
   areas_of_interest = areas_of_interest,
-  buffer_distance = buffer_distance,
   EPSG_for_transform = 28355
 )
 
@@ -652,7 +650,7 @@ Next the areas_of interest are transformed from latitude and longitude into metr
 
 ```{r transform_areas, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 
-
+EPSG_for_transform = 28355
   # transform areas_of_interest to CRS in metres
   areas_of_interest <- sf::st_transform(areas_of_interest, EPSG_for_transform)
  
@@ -725,11 +723,73 @@ Finally, the $area_{Bn}$ terms are calculated for each combination of stop_id an
 
 ### Calculating stop arrivals and the SI
 
+The SI_calc.R function takes the stops_in_or_near_areas list (by route_type) of dataframes and the list_gtfs list (by route_type) of tidygtfs objects and calculates the si_by_mode_and_time list (by route_type) of dataframes. This dataframe has a record for each area_id and combination of date, start_time and end_time specified by the user, and the corresponding (calculated) SI value.   
 
+The tidytransit package includes an article about generating a departure timetable[@tidytransit_departure_timetable]. Code was adapted from this example to create functions to calculate the number of departures and arrivals from (a vector of) stop_ids within a given time period. 
 
+```{r departures_mornington_20181230, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE}
 
+stop_ids <- gtfs_single_route_type$stops %>%
+ dplyr::select(stop_id)
 
+departures_by_stop_id <- gtfssupplyindex::departures(
+ gtfs = gtfs_single_route_type,
+ stop_ids = stop_ids,
+ date_ymd = "2018-12-30",
+ start_hms = lubridate::hms("10:30:00"),
+ end_hms = lubridate::hms("16:00:00")
+)
 
+departures_by_stop_id %>% kable(caption = "Departures at each stop for Sunday December 2018, Mornington Peninsula tourist railway.")
+
+arrivals_by_stop_id <- gtfssupplyindex::arrivals(
+ gtfs = gtfs_single_route_type,
+ stop_ids = stop_ids,
+ date_ymd = "2018-12-30",
+ start_hms = lubridate::hms("10:30:00"),
+ end_hms = lubridate::hms("16:00:00")
+)
+
+arrivals_by_stop_id %>% kable(caption = "Arrivals at each stop for Sunday December 30th 2018, Mornington Peninsula tourist railway.")
+
+```
+This matches the number of trips shown in the Mornington Railway GTFS feed, being 4 in each direction^[https://transitfeeds.com/p/mornington-railway/806/latest/stop/1388695887/20181230]. 
+
+All the inputs to calculate the si_by_mode_and_time list (by route_text) of tables are now available.  
+
+```{r SI_mornington_20181230, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE}
+####-----first load all the inputs
+
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
+  "extdata/mornington180109",
+  "gtfs.zip", 
+  package = "gtfssupplyindex", 
+  mustWork = TRUE))
+
+areas_of_interest <- load_areas_of_interest(absmapsdata::sa22021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa2_code_2021),  area_id_field = "sa2_code_2021")
+
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  EPSG_for_transform = 28355,
+  verbose = FALSE
+)
+
+####----run SI.calc function to build si_by_mode_and_time list (by route_type) of tables
+
+si_by_mode_and_time <- SI_calc(
+    list_gtfs = list_gtfs,
+    stops_in_or_near_areas = stops_in_or_near_areas, 
+    date_ymd = "2018-12-30", 
+    start_hms = lubridate::hms("10:30:00"),
+    end_hms = lubridate::hms("16:00:00"),
+    verbose = TRUE)
+
+  
+```
 ### Hourly
 
 As discussed above, the SI is additive, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
@@ -738,9 +798,6 @@ The buffer_distance table draws data from Comma Separated Variables (CSV) file, 
 
 The areas_of_interest table stores geometric information about the areas for which SI scores are desired, as simple features^[See https://cran.r-project.org/web/packages/sf/vignettes/sf1.html]. The stops_in_or_near_areas and si_by_mode_and_time tables are used to store components of the SI during the calculations, which are described in the following.  
 
-
-CODE references
-[@tidytransit_departure_timetable] 
 
 
 
