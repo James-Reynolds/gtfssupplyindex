@@ -755,7 +755,7 @@ arrivals_by_stop_id %>% kable(caption = "Arrivals at each stop for Sunday Decemb
 ```
 This matches the number of trips shown in the Mornington Railway GTFS feed, being 4 in each direction^[https://transitfeeds.com/p/mornington-railway/806/latest/stop/1388695887/20181230]. 
 
-All the inputs to calculate the si_by_mode_and_time list (by route_text) of tables are now available.  
+All the inputs to calculate the si_by_mode_and_time list (by route_text) of tables are now available. Hence, the SI.calc function can be run, as follows:
 
 ```{r SI_mornington_20181230, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE}
 ####-----first load all the inputs
@@ -783,13 +783,45 @@ stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
 si_by_mode_and_time <- SI_calc(
     list_gtfs = list_gtfs,
     stops_in_or_near_areas = stops_in_or_near_areas, 
-    date_ymd = "2018-12-30", 
+    date_ymd = lubridate::ymd("2018-12-30"), 
     start_hms = lubridate::hms("10:30:00"),
     end_hms = lubridate::hms("16:00:00"),
     verbose = TRUE)
 
-  
+si_by_mode_and_time
+
 ```
+
+The si_by_mode_and_time has a nested list structure, with the levels showing (in order), the date, the start time, the end time, the route_type. The elements of the final list (route_type) contain a dataframe with the area_id and SI, in this instance for the 'rail' route_type relevant to the Mornington Peninsula Railway. 
+
+Calculation of the SI for other time periods can be simply appended, as follows. 
+
+```{r SI_mornington_20181230, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE}
+####-----first load all the inputs
+
+si_by_mode_and_time_1 <- SI_calc(
+  list_gtfs = list_gtfs,
+  stops_in_or_near_areas = stops_in_or_near_areas, 
+  date_ymd = lubridate::ymd("2018-12-23"), #7 days earlier
+  start_hms = lubridate::hms("10:30:00"), # Same start time
+  end_hms = lubridate::hms("11:30:00"), # Only for one hour
+verbose = TRUE)
+
+si_by_mode_and_time <- append(si_by_mode_and_time, si_by_mode_and_time_1)
+
+si_by_mode_and_time_2 <- SI_calc(
+  list_gtfs = list_gtfs,
+  stops_in_or_near_areas = stops_in_or_near_areas, 
+  date_ymd = lubridate::ymd("2018-12-23"), #7 days earlier
+  start_hms = lubridate::hms("11:30:00"), # Same start time
+  end_hms = lubridate::hms("12:30:00"), # Only for one hour
+verbose = TRUE)
+
+si_by_mode_and_time <- append(si_by_mode_and_time, si_by_mode_and_time_2)
+
+```
+
+
 ### Hourly
 
 As discussed above, the SI is additive, so the si_by_area_day_and_hour table can be calculated from a si_by_mode_and_time table containing individual SI scores by mode^[SI calculations must be on a per mode basis up until the final aggregation because individual modes may have different buffer distances.] for individual periods of time. 
