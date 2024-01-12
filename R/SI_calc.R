@@ -10,8 +10,7 @@
 #' exclusive of services that arrive at that time precisely
 #' @param verbose if TRUE function will print intermediate tables and steps.
 #'
-#' @return a list by date containing a list by start time containing a list by 
-#' end time containing a datatable with area_id and matching SI scores
+#' @return a list (by route_type) of dataframes with area_id and matching SI scores
 #' @export
 #'
 #' @examples
@@ -39,7 +38,7 @@
 #'
 #'####----run SI.calc function to build si_by_mode_and_time list (by route_type) of tables
 #'
-#'si_by_mode_and_time <- SI_calc(
+#'si_by_mode_and_time <- si_calc(
 #'  list_gtfs = list_gtfs,
 #'  stops_in_or_near_areas = stops_in_or_near_areas, 
 #'  date_ymd = lubridate::ymd("2018-12-30"), 
@@ -48,7 +47,7 @@
 #'  verbose = TRUE)
 
  
-SI_calc <- function(
+si_calc <- function(
     list_gtfs, 
     stops_in_or_near_areas, 
     date_ymd, 
@@ -69,18 +68,13 @@ SI_calc <- function(
   
   
   # apply SI_calc_one_route function to list (by route) of stops_in_or_near_areas
-  si_by_mode_and_time <- lapply(stops_in_or_near_areas_list_with_route_name, SI_calc_one_route,
+  si_by_mode_and_time <- lapply(stops_in_or_near_areas_list_with_route_name, si_calc_one_route,
                                   list_gtfs,
                                   date_ymd,
                                   start_hms,
                                   end_hms,
                                   verbose)
-  # put inside list by date and times
-  si_by_mode_and_time <- list(date_ymd = (list(start_hms = list(end_hms = si_by_mode_and_time))))
-  #name list elements after date, start and end times
-  names(si_by_mode_and_time) <- date_ymd
-  names(si_by_mode_and_time[[1]]) <- start_hms
-  names(si_by_mode_and_time[[1]][[1]]) <- end_hms
+ 
   return(si_by_mode_and_time)
 }
 
@@ -126,7 +120,7 @@ SI_calc <- function(
 #')
 #
 #'
-#'si_by_mode_and_time_one_route_type <- SI_calc_one_route(
+#'si_by_mode_and_time_one_route_type <- si_calc_one_route(
 #'  stops_in_or_near_areas_dataframe = 
 #'  stops_in_or_near_areas_list_with_route_name <- mapply(function(x, nm){ 
 #'    route_type_name = nm
@@ -141,7 +135,7 @@ SI_calc <- function(
 #'  end_hms = lubridate::hms("16:00:00"),
 #'  verbose = TRUE)
 
-SI_calc_one_route <- function(
+si_calc_one_route <- function(
     stops_in_or_near_areas_dataframe, 
     list_gtfs,
     date_ymd, 
