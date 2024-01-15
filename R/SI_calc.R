@@ -57,7 +57,7 @@ si_calc <- function(
   
   
   
-  # add route_type names to list (by route) of tidy_gtfs
+  # add route_type names to list (by route) of stops_in_or_near_areas
   stops_in_or_near_areas_list_with_route_name <- mapply(function(x, nm){ 
     route_type_name = nm
     x <- list(x)
@@ -136,7 +136,7 @@ si_calc <- function(
 #'  verbose = TRUE)
 
 si_calc_one_route <- function(
-    stops_in_or_near_areas_dataframe, 
+    stops_in_or_near_areas_dataframe_and_route_type, 
     list_gtfs,
     date_ymd, 
     start_hms,
@@ -145,33 +145,33 @@ si_calc_one_route <- function(
 
   #obtain the arrivals by stop_id using arrivals function
   arrivals_by_stop_id <- gtfssupplyindex::arrivals(
-    gtfs = list_gtfs[[stops_in_or_near_areas_dataframe[[2]]
+    gtfs = list_gtfs[[stops_in_or_near_areas_dataframe_and_route_type[[2]]
     ]],
-    stop_ids = unique(stops_in_or_near_areas_dataframe[[1]]["stop_id"]),
-    date_ymd = "2018-12-30",
+    stop_ids = unique(stops_in_or_near_areas_dataframe_and_route_type[[1]]["stop_id"]),
+    date_ymd = date_ymd,
     start_hms = start_hms,
     end_hms = end_hms
   )
   
   #join number of arrivals per stop to the stops_in_or_near_areas table
-  stops_in_or_near_areas_dataframe[[1]] <- left_join(
-    stops_in_or_near_areas_dataframe[[1]], 
+  stops_in_or_near_areas_dataframe_and_route_type[[1]] <- left_join(
+    stops_in_or_near_areas_dataframe_and_route_type[[1]], 
     arrivals_by_stop_id, 
     by = "stop_id")
 
 #Calculate SI as areas_terms multiplied by the arrivals (SLn)    
-stops_in_or_near_areas_dataframe[[1]]$SI <- 
-  stops_in_or_near_areas_dataframe[[1]]$area_terms *
-    stops_in_or_near_areas_dataframe[[1]]$arrivals
+  stops_in_or_near_areas_dataframe_and_route_type[[1]]$SI <- 
+    stops_in_or_near_areas_dataframe_and_route_type[[1]]$area_terms *
+    stops_in_or_near_areas_dataframe_and_route_type[[1]]$arrivals
 
 #Sum SI for each area_id
-si_by_route_type <- aggregate(
-  stops_in_or_near_areas_dataframe[[1]]$SI,
+si_by_area_id <- aggregate(
+  stops_in_or_near_areas_dataframe_and_route_type[[1]]$SI,
   by = list(
-    area_id = stops_in_or_near_areas_dataframe[[1]]$area_id),
+    area_id = stops_in_or_near_areas_dataframe_and_route_type[[1]]$area_id),
   FUN = sum
   ) 
-names(si_by_route_type) <- c("area_id", "SI")
+names(si_by_area_id) <- c("area_id", "SI")
 
-return(si_by_route_type)
+return(si_by_area_id)
 }

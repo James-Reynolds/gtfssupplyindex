@@ -940,21 +940,51 @@ knitr::include_graphics("graphics/Melbourne_cbd_north_sa2.png")
 
 Trains stop at Melbourne Central and Flagstaff stations. Trams run along Elizabeth, Swanston, William, La Trobe and other streets. There are also bus services throughout the area, including along Queen Street. 
 
+First step is to load the PTV GTFS data.  Some data wrangling is required as there are duplicate stop_ids in the stop definitions. 
+
+
+```{r fix_ptv_data, eval = FALSE, echo = TRUE}
+ptv_231228 <- tidytransit::read_gtfs("data/ptv_231228/gtfs.zip")
+# This results in "Warning: Duplicated ids found in: stops The returned object is not a tidygtfs object, you can use as_tidygtfs() after fixing the issue."
+
+#So, remove the duplicated stops 
+#identify duplicate stops
+ptv_231228_duplicated_stops <- tabyl(ptv_231228$stops$stop_id) %>% filter (n>1)
+names(ptv_231228_duplicated_stops) <- c("stop_id", "n", "percent")
+ptv_231228_duplicated_stops <- left_join(ptv_231228_duplicated_stops, ptv_231228$stops)
+
+##discard duplicates
+ptv_231228$stops <- ptv_231228$stops[!duplicated(ptv_231228$stops$stop_id),]
+
+## Write gtfs back to file
+ptv_231228 <- as_tidygtfs(ptv_231228)
+tidytransit::write_gtfs(ptv_231228, "data/ptv_231228/gtfs_duplicate_stops_removed.zip")
+
+```
+
+Now that the duplicate stop_ids have been removed and the gtfs feed written back to file ("data/ptv_231228/gtfs_duplicate_stops_removed.zip"), the gtfs_by_route_type function can be run.
+
+```{r load_ptv_data, eval = FALSE, echo = TRUE}
+
+## convert to list of tidygtfs objects
+ptv_231228_list_gtfs <- gtfssupplyindex::gtfs_by_route_type("data/ptv_231228/gtfs_duplicate_stops_removed.zip")
+
+```
+
 ### Trams only 
 Looking first at the trams only, running the stops_in_walk_dist function with verbose = TRUE gives the following output 
 
-```{r Melbourne_CBD_north_test_check_whole_function_trams, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops"}
-#load the Victorian GTFS
-ptv_231228 <- gtfssupplyindex:::gtfs_by_route_type(path = "data/ptv_231228/gtfs.zip")
+```{r Melbourne_CBD_north_trams_stops_in_walk_dist, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops"}
 
-ptv_231228_trams_only <- ptv_231228[1]
+#load only the trams as a list of tidygtfs objects
+ptv_231228_trams_only_list_gtfs <- ptv_231228_list_gtfs[1]
 
 areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_name_2021 == "Melbourne CBD - North") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
 
 buffer_distance <- gtfssupplyindex:::load_buffer_zones()
 
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
-  list_gtfs = ptv_231228_trams_only, 
+  list_gtfs = ptv_231228_trams_only_list_gtfs, 
   areas_of_interest = areas_of_interest,
   EPSG_for_transform = 28355,
   verbose = TRUE
@@ -973,6 +1003,29 @@ knitr::include_graphics("graphics/Russell_bourke_tram_catchment.png")
 knitr::include_graphics("graphics/russell_bourke_map.png")
 
 ```
+
+
+```{r Melbourne_CBD_north_trams_si_hourly, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops"}
+
+
+si_by_route_type <- si_calc(
+    list_gtfs = ptv_231228_trams_only_list_gtfs,
+    stops_in_or_near_areas = stops_in_or_near_areas, 
+    date_ymd = lubridate::ymd("2024-01-16"), 
+    start_hms = lubridate::hms("10:30:00"),
+    end_hms = lubridate::hms("16:00:00"),
+    verbose = TRUE)
+
+si_by_route_type %>% kable(caption = "SI values for SA")
+
+
+si_by_area_and_hour_wider <- hourly(list_gtfs, stops_in_or_near_areas, "2018-12-30")
+
+si_by_area_and_hour_wider %>% adorn_totals(where = "col") %>% kable(caption = "Mornington Penninsula Tourist Railway hourly SI values for December 30, 2018, for SA1 zones")
+
+
+```
+
 
 ### Rail only
 
