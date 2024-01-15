@@ -38,7 +38,7 @@
 #'
 #'####----run SI.calc function to build si_by_mode_and_time list (by route_type) of tables
 #'
-#'si_by_mode_and_time <- si_calc(
+#'si_by_route_type <- si_calc(
 #'  list_gtfs = list_gtfs,
 #'  stops_in_or_near_areas = stops_in_or_near_areas, 
 #'  date_ymd = lubridate::ymd("2018-12-30"), 
@@ -149,8 +149,8 @@ si_calc_one_route <- function(
     ]],
     stop_ids = unique(stops_in_or_near_areas_dataframe[[1]]["stop_id"]),
     date_ymd = "2018-12-30",
-    start_hms = lubridate::hms("10:30:00"),
-    end_hms = lubridate::hms("16:00:00")
+    start_hms = start_hms,
+    end_hms = end_hms
   )
   
   #join number of arrivals per stop to the stops_in_or_near_areas table
@@ -165,13 +165,13 @@ stops_in_or_near_areas_dataframe[[1]]$SI <-
     stops_in_or_near_areas_dataframe[[1]]$arrivals
 
 #Sum SI for each area_id
-si_by_area_for_one_route_type_and_time <- aggregate(
+si_by_route_type <- aggregate(
   stops_in_or_near_areas_dataframe[[1]]$SI,
   by = list(
     area_id = stops_in_or_near_areas_dataframe[[1]]$area_id),
   FUN = sum
   ) 
-names(si_by_area_for_one_route_type_and_time) <- c("area_id", "SI")
+names(si_by_route_type) <- c("area_id", "SI")
 
-return(si_by_area_for_one_route_type_and_time)
+return(si_by_route_type)
 }

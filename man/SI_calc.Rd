@@ -60,7 +60,7 @@ stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
 
 ####----run SI.calc function to build si_by_mode_and_time list (by route_type) of tables
 
-si_by_mode_and_time <- si_calc(
+si_by_route_type <- si_calc(
  list_gtfs = list_gtfs,
  stops_in_or_near_areas = stops_in_or_near_areas, 
  date_ymd = lubridate::ymd("2018-12-30"), 

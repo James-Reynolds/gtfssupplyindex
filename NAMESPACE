@@ -2,9 +2,12 @@
 
 export(arrivals)
 export(departures)
+export(earliest_arrival)
 export(first_and_last_stops)
 export(get_nyc_in_metric)
 export(gtfs_by_route_type)
+export(hourly)
+export(latest_arrival)
 export(load_areas_of_interest)
 export(load_buffer_zones)
 export(si_calc)
