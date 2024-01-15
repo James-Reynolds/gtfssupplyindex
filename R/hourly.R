@@ -105,7 +105,7 @@ return(si_by_area_and_hour_wider)
 #' 
 #' 
 earliest_arrival <- function(gtfs){
-  return(min(gtfs$stop_times$arrival_time) %>% seconds_to_period())
+  return(gtfs$stop_times$arrival_time %>% as.character() %>% min() %>% hms())
 }
 
 
@@ -130,6 +130,6 @@ earliest_arrival <- function(gtfs){
 #' 
 #' 
 latest_arrival <- function(gtfs){
-  return(max(gtfs$stop_times$arrival_time) %>% seconds_to_period())
-}
+  return(gtfs$stop_times$arrival_time %>% as.character() %>% max() %>% hms())
+    }
 
