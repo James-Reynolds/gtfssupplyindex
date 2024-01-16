@@ -944,6 +944,9 @@ First step is to load the PTV GTFS data.  Some data wrangling is required as the
 
 
 ```{r fix_ptv_data, eval = FALSE, echo = TRUE}
+##-----THIS CHUNK ONLY NEEDS TO BE RUN ONCE TO CREATE THE gtfs_duplicate_stops_removed.zip file-----HENCE EVAL = FALSE ABOVE
+
+
 ptv_231228 <- tidytransit::read_gtfs("data/ptv_231228/gtfs.zip")
 # This results in "Warning: Duplicated ids found in: stops The returned object is not a tidygtfs object, you can use as_tidygtfs() after fixing the issue."
 
@@ -1225,11 +1228,160 @@ ggplot() +
 
 In general, the SI scores appear to match expectations. SA1 zones closer to Melbourne Central and Flagstaff have higher scores.
 
+## Melbourne, Victoria
+
+This section presents hourly SI values for all SA1 zones in Greater Melbourne for a typical weekday and weekend. The selected days are Tuesday 10th, Saturday 14th and Sunday 15th of October 2023.  These days were selected so as to match the typical timing of the Australian Census (a Tuesday in early October), even though 2023 is not a census year.  
+
+```{r fix_ptv_data_Victoria_231006, eval = FALSE, echo = TRUE}
+##-----THIS CHUNK ONLY NEEDS TO BE RUN ONCE TO CREATE THE gtfs_duplicate_stops_removed.zip file-----HENCE EVAL = FALSE ABOVE
+
+ptv_231006 <- tidytransit::read_gtfs("data/ptv_231006/gtfs.zip")
+# This results in "Warning: Duplicated ids found in: stops The returned object is not a tidygtfs object, you can use as_tidygtfs() after fixing the issue."
+
+#So, remove the duplicated stops 
+#identify duplicate stops
+ptv_231006_duplicated_stops <- tabyl(ptv_231006$stops$stop_id) %>% filter (n>1)
+names(ptv_231006_duplicated_stops) <- c("stop_id", "n", "percent")
+ptv_231006_duplicated_stops <- left_join(ptv_231006_duplicated_stops, ptv_231006$stops)
+
+##discard duplicates
+ptv_231006$stops <- ptv_231006$stops[!duplicated(ptv_231006$stops$stop_id),]
+
+## Write gtfs back to file
+ptv_231006 <- as_tidygtfs(ptv_231006)
+tidytransit::write_gtfs(ptv_231006, "data/ptv_231006/gtfs_duplicate_stops_removed.zip")
+
+```
+Again, there are duplicate stop_ids in the PTV GTFS dataset.  These have been removed and the gtfs feed written back to file ("data/ptv_231006/gtfs_duplicate_stops_removed.zip"), on which the gtfs_by_route_type function can be run.
+
+```{r load_ptv_data_231006, eval = TRUE, echo = TRUE}
+
+## convert to list of tidygtfs objects
+ptv_231006_list_gtfs <- gtfssupplyindex::gtfs_by_route_type("data/ptv_231006/gtfs_duplicate_stops_removed.zip")
 
 ```
 
-## Melbourne, Victoria
 
+```{r Melbourne_all_stops_in_walk_dist_231006, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, rail", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, rail, by stop, first six stops")}
+
+
+list_gtfs = ptv_231006_list_gtfs
+
+areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(gcc_name_2021 == "Greater Melbourne") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
+
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  EPSG_for_transform = 28355,
+  verbose = FALSE
+)
+
+#si_by_route_type <- si_calc(
+#    list_gtfs = list_gtfs,
+#    stops_in_or_near_areas = stops_in_or_near_areas, 
+#    date_ymd = lubridate::ymd("2024-01-16"), 
+#    start_hms = lubridate::hms("10:30:00"),
+#    end_hms = lubridate::hms("16:00:00"),
+#    verbose = TRUE)
+
+#si_by_route_type %>% head() %>% kable(caption = "SI values for SA1 zones with the Melbourne CBD - North SA2 for 10:30am to 4pm on January 16, 2024, first 6 SA1 zones")
+
+
+si_by_area_and_hour <- hourly(
+  list_gtfs = list_gtfs, 
+  stops_in_or_near_areas = stops_in_or_near_areas, 
+  date_ymd = "2023-10-10")
+
+#pivot to wider for display as table
+si_by_area_and_hour_wider <- si_by_area_and_hour %>% pivot_wider(names_from = hour_starting, values_from = SI)
+
+si_by_area_and_hour_wider %>% select(1, 6:28) %>% head(n=75) %>% adorn_rounding(digits = 0) %>% kable(caption = "Victorian GTFS and SA1 zones within the Greater Melbourne GCCSA, hourly SI values for October 10, 2023, first 75 SA1 zones, 4am to 2am only" )
+
+
+```
+
+
+
+This appears to meet expectations, with SI scores peaking in the morning (8-9) and evening (17-18).
+
+The below figure maps this output for just the SA1 zones within the Melbourne CBD - North SA2 zone. 
+
+
+
+
+```{r Melbourne_CBD_north_all_map_231006, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.fullwidth = TRUE, fig.cap="Victorian rail and SA1 zones within the Melbourne CBD - North SA2 zone,SI values for January 16, 2024, by hour"}
+
+map_areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_name_2021 == "Melbourne CBD - North") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
+
+#Join SI to map data
+map_si_by_area_and_hour <- inner_join(map_areas_of_interest, si_by_area_and_hour)
+
+map_si_by_area_and_hour$hour_starting <- as_factor(map_si_by_area_and_hour$hour_starting)
+
+ggplot() + 
+  geom_sf(data=map_si_by_area_and_hour,
+          aes(fill = SI)) +
+            facet_wrap(vars(hour_starting)) +
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+  )
+
+```
+
+
+
+```{r Clayton_campus_all_map_231006, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.fullwidth = TRUE, fig.cap="Victorian rail and SA1 zones within the Melbourne CBD - North SA2 zone,SI values for January 16, 2024, by hour"}
+
+map_areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_name_2021 == "Clayton (North) - Notting Hill") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
+
+#Join SI to map data
+map_si_by_area_and_hour <- inner_join(map_areas_of_interest, si_by_area_and_hour)
+
+map_si_by_area_and_hour$hour_starting <- as_factor(map_si_by_area_and_hour$hour_starting)
+
+ggplot() + 
+  geom_sf(data=map_si_by_area_and_hour,
+          aes(fill = SI)) +
+            facet_wrap(vars(hour_starting)) +
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+  )
+
+```
+
+
+
+```{r Caulfield_campus_all_map_231006, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.fullwidth = TRUE, fig.cap="Victorian rail and SA1 zones within the Melbourne CBD - North SA2 zone,SI values for January 16, 2024, by hour"}
+
+map_areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_name_2021 == "Caulfield - North") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
+
+#Join SI to map data
+map_si_by_area_and_hour <- inner_join(map_areas_of_interest, si_by_area_and_hour)
+
+map_si_by_area_and_hour$hour_starting <- as_factor(map_si_by_area_and_hour$hour_starting)
+
+ggplot() + 
+  geom_sf(data=map_si_by_area_and_hour,
+          aes(fill = SI)) +
+            facet_wrap(vars(hour_starting)) +
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+  )
+
+```
+
+
+
+
+In general, the SI scores appear to match expectations. SA1 zones closer to Melbourne Central and Flagstaff have higher scores.
 
 
 # Discussion
