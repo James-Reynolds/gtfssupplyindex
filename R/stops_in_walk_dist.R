@@ -108,7 +108,7 @@ stops_in_walk_dist_one_route <- function(
     # plot for each stop, but only first six
     print(ggplot() + 
             geom_sf(data=stops_in_or_near_areas %>% 
-                      filter(stop_id %in%
+                      dplyr::filter(stop_id %in%
                                (stops_in_or_near_areas$stop_id %>%
                                   unique() %>% head()))
                     , aes(fill = area_id)) + 

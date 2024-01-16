@@ -7,7 +7,7 @@
 #' and the associated area_terms of SI calculation
 #' @param date_ymd The date of interest
 #'
-#' @return A tibble with SI for each hour of service (columns) for each area (rows)
+#' @return A tibble with SI for each combination of area and hour of service
 #' @export
 #'
 #' @examples
@@ -20,8 +20,10 @@
 #' package = "gtfssupplyindex", 
 #' mustWork = TRUE))
 #' 
-#' areas_of_interest <- load_areas_of_interest(absmapsdata::sa22021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa2_code_2021),  area_id_field = "sa2_code_2021")
-#' 
+#' areas_of_interest <- load_areas_of_interest(absmapsdata::sa22021 %>% 
+#'             dplyr::filter(sa3_name_2021 ==  "Mornington Peninsula") %>% 
+#'                                              dplyr::select(sa2_code_2021),  
+#'                                            area_id_field = "sa2_code_2021") 
 #' buffer_distance <- gtfssupplyindex:::load_buffer_zones()
 #' 
 #' stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
@@ -69,17 +71,14 @@ for(i in seq(first_hour, last_hour)){
     verbose = TRUE)
 
   si_by_area <- si_total(si_by_route_type)
-  si_by_area$hour_starting <- lubridate::hour(start_hms)
+  si_by_area$hour_starting <- paste(as.character(lubridate::hour(start_hms)), ":00", sep = "")
 
   si_by_area_and_hour <- rbind(si_by_area_and_hour, si_by_area)  
 
 }
 
-#return in wider format, one column for each hour.
-si_by_area_and_hour_wider <- pivot_wider(si_by_area_and_hour, 
-                                         names_from = hour_starting, 
-                                         values_from = SI)
-return(si_by_area_and_hour_wider)
+
+return(si_by_area_and_hour)
 
 }
 
@@ -105,7 +104,7 @@ return(si_by_area_and_hour_wider)
 #' 
 #' 
 earliest_arrival <- function(gtfs){
-  return(gtfs$stop_times$arrival_time %>% as.character() %>% min() %>% hms())
+  return(gtfs$stop_times$arrival_time %>% as.character() %>% min() %>% lubridate::hms())
 }
 
 
@@ -130,6 +129,6 @@ earliest_arrival <- function(gtfs){
 #' 
 #' 
 latest_arrival <- function(gtfs){
-  return(gtfs$stop_times$arrival_time %>% as.character() %>% max() %>% hms())
+  return(gtfs$stop_times$arrival_time %>% as.character() %>% max() %>% lubridate::hms())
     }
 

@@ -964,7 +964,7 @@ tidytransit::write_gtfs(ptv_231228, "data/ptv_231228/gtfs_duplicate_stops_remove
 
 Now that the duplicate stop_ids have been removed and the gtfs feed written back to file ("data/ptv_231228/gtfs_duplicate_stops_removed.zip"), the gtfs_by_route_type function can be run.
 
-```{r load_ptv_data, eval = FALSE, echo = TRUE}
+```{r load_ptv_data, eval = TRUE, echo = TRUE}
 
 ## convert to list of tidygtfs objects
 ptv_231228_list_gtfs <- gtfssupplyindex::gtfs_by_route_type("data/ptv_231228/gtfs_duplicate_stops_removed.zip")
@@ -974,10 +974,11 @@ ptv_231228_list_gtfs <- gtfssupplyindex::gtfs_by_route_type("data/ptv_231228/gtf
 ### Trams only 
 Looking first at the trams only, running the stops_in_walk_dist function with verbose = TRUE gives the following output 
 
-```{r Melbourne_CBD_north_trams_stops_in_walk_dist, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops"}
+```{r Melbourne_CBD_north_trams_stops_in_walk_dist, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops")}
 
 #load only the trams as a list of tidygtfs objects
 ptv_231228_trams_only_list_gtfs <- ptv_231228_list_gtfs[1]
+list_gtfs = ptv_231228_trams_only_list_gtfs
 
 areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_name_2021 == "Melbourne CBD - North") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
 
@@ -990,7 +991,7 @@ stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   verbose = TRUE
 )
 ```
-In general, the results appear to meet expectations. The first stop has a stop id of 17591. This stop is located at Russell and Bourke Street^[https://transitfeeds.com/p/ptv/497/latest/stops?q=17591]. A 400 metres catchment overlaid on this stop is shown in the margin^[Note: Roughly drawn from the ABS maps.].  This matches the code output shown above (and duplicated in the margin).
+In general, the results appear to meet expectations. The first stop has a stop id of 17591. This stop is located at Russell and Bourke Street^[https://transitfeeds.com/p/ptv/497/latest/stops?q=17591]. A 400 metres catchment overlaid on this stop is shown in the margin^[Note: Roughly drawn from the ABS maps.].  This matches the code output shown above (top left of figure).
 
 
 ```{r Russell_bourke_catchment, fig.width = 10, fig.height = 2, fig.margin = TRUE, fig.cap = "SA1 zone boundaries within the Melbourne CBD - North SA2, overlayed with 400m radius from Russell and Bourke Street. Source: ABS and author", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
@@ -998,66 +999,166 @@ knitr::include_graphics("graphics/Russell_bourke_tram_catchment.png")
 
 ```
 
+Running the hourly function for January 16, 2024 gives the following output:
 
-```{r Russell_bourke_map, fig.width = 10, fig.height = 2, fig.margin = TRUE, fig.cap = "Area mapping for stop 17591 (Russel and Bourke), duplicated from above verbose code output", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
-knitr::include_graphics("graphics/russell_bourke_map.png")
+
+```{r Melbourne_CBD_north_trams_si_hourly, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+
+
+#si_by_route_type <- si_calc(
+#    list_gtfs = ptv_231228_trams_only_list_gtfs,
+#    stops_in_or_near_areas = stops_in_or_near_areas, 
+#    date_ymd = lubridate::ymd("2024-01-16"), 
+#    start_hms = lubridate::hms("10:30:00"),
+#    end_hms = lubridate::hms("16:00:00"),
+#    verbose = TRUE)
+
+#si_by_route_type %>% head() %>% kable(caption = "SI values for SA1 zones with the Melbourne CBD - North SA2 for 10:30am to 4pm on January 16, 2024, first 6 SA1 zones")
+
+
+si_by_area_and_hour <- hourly(
+  list_gtfs = ptv_231228_trams_only_list_gtfs, 
+  stops_in_or_near_areas = stops_in_or_near_areas, 
+  date_ymd = "2024-01-16")
+
+#pivot to wider for display as table
+si_by_area_and_hour_wider <- si_by_area_and_hour %>% pivot_wider(names_from = hour_starting, values_from = SI)
+
+si_by_area_and_hour_wider %>% select(1, 6:26) %>% head() %>% adorn_rounding(digits = 0) %>% kable(caption = "Victorian Trams and SA1 zones within the Melbourne CBD - North SA2 zone, hourly SI values for January 16, 2024, first 6 SA1 zones, zeroed columns excluded." )
+
 
 ```
 
+This appears to meet expectations, with SI scores peaking in the morning (8-9) and evening (17-18). 
 
-```{r Melbourne_CBD_north_trams_si_hourly, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops"}
-
-
-si_by_route_type <- si_calc(
-    list_gtfs = ptv_231228_trams_only_list_gtfs,
-    stops_in_or_near_areas = stops_in_or_near_areas, 
-    date_ymd = lubridate::ymd("2024-01-16"), 
-    start_hms = lubridate::hms("10:30:00"),
-    end_hms = lubridate::hms("16:00:00"),
-    verbose = TRUE)
-
-si_by_route_type %>% kable(caption = "SI values for SA")
+The below figure maps this output. 
 
 
-si_by_area_and_hour_wider <- hourly(list_gtfs, stops_in_or_near_areas, "2018-12-30")
 
-si_by_area_and_hour_wider %>% adorn_totals(where = "col") %>% kable(caption = "Mornington Penninsula Tourist Railway hourly SI values for December 30, 2018, for SA1 zones")
 
+```{r Melbourne_CBD_north_trams_map, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.fullwidth = TRUE, fig.cap="Victorian Trams and SA1 zones within the Melbourne CBD - North SA2 zone,SI values for January 16, 2024, by hour"}
+
+#Join SI to map data
+si_by_area_and_hour <- left_join(areas_of_interest, si_by_area_and_hour)
+
+si_by_area_and_hour$hour_starting <- as_factor(si_by_area_and_hour$hour_starting)
+
+ggplot() + 
+  geom_sf(data=si_by_area_and_hour,
+          aes(fill = SI)) +
+            facet_wrap(vars(hour_starting)) +
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+  )
 
 ```
+
+In general, the results match expectations, with higher SI scores for SA1 zones that area closer to the Swanston, Elizabeth and Latrobe St corridors (which are where the trams are!)
+
 
 
 ### Rail only
 
-Looking first at the trams only, running the stops_in_walk_dist function with verbose = TRUE gives the following output 
 
-```{r Melbourne_CBD_north_test_check_whole_function_rail, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops"}
-ptv_231228_rail_only <- ptv_231228[2]
+Looking next at the rail only, running the stops_in_walk_dist function with verbose = TRUE gives the following output 
+
+```{r Melbourne_CBD_north_rail_stops_in_walk_dist, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, rail", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, rail, by stop, first six stops")}
+
+#load only the rail as a list of tidygtfs objects
+ptv_231228_rail_only_list_gtfs <- ptv_231228_list_gtfs[2]
+list_gtfs = ptv_231228_rail_only_list_gtfs
 
 areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_name_2021 == "Melbourne CBD - North") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
 
 buffer_distance <- gtfssupplyindex:::load_buffer_zones()
 
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
-  list_gtfs = ptv_231228_rail_only, 
+  list_gtfs = ptv_231228_rail_only_list_gtfs, 
   areas_of_interest = areas_of_interest,
   EPSG_for_transform = 28355,
   verbose = TRUE
 )
 ```
-The rail results appear to meet expectations: 
+In general, the results appear to meet expectations: 
 
 - Flagstaff Railway Station (stop_id 19841) is roughly 800m from the intersection of Swanston Street and Lonsdale Street, which is where the arc shown in the bottom right of the top left figure terminates^[https://transitfeeds.com/p/ptv/497/latest/stop/19841];
 - The entire SA2 is within the 800m catchment of Melbourne Central Station (stop_id 19842);
 - Only a small part of the SA2 is within 800m of Parliament Station (to the south east, stop_id 19843). 
 - Only a small part of the SA2 is within 800m of Flinders Street Station (to the south, stop_ids 19854 and 22238).  There are two stops related to Flinders Street because there are both Vline and Metro Trains services, which each have a different stop_id^[https://transitfeeds.com/p/ptv/497/latest/stop/19854 and https://transitfeeds.com/p/ptv/497/latest/stop/22238].  
 
+
+
+Running the hourly function for January 16, 2024 gives the following output:
+
+
+```{r Melbourne_CBD_north_rail_si_hourly, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+
+
+#si_by_route_type <- si_calc(
+#    list_gtfs = ptv_231228_rail_only_list_gtfs,
+#    stops_in_or_near_areas = stops_in_or_near_areas, 
+#    date_ymd = lubridate::ymd("2024-01-16"), 
+#    start_hms = lubridate::hms("10:30:00"),
+#    end_hms = lubridate::hms("16:00:00"),
+#    verbose = TRUE)
+
+#si_by_route_type %>% head() %>% kable(caption = "SI values for SA1 zones with the Melbourne CBD - North SA2 for 10:30am to 4pm on January 16, 2024, first 6 SA1 zones")
+
+
+si_by_area_and_hour <- hourly(
+  list_gtfs = ptv_231228_rail_only_list_gtfs, 
+  stops_in_or_near_areas = stops_in_or_near_areas, 
+  date_ymd = "2024-01-16")
+
+#pivot to wider for display as table
+si_by_area_and_hour_wider <- si_by_area_and_hour %>% pivot_wider(names_from = hour_starting, values_from = SI)
+
+si_by_area_and_hour_wider %>% select(1, 4:24) %>% head(n=75) %>% adorn_rounding(digits = 0) %>% kable(caption = "Victorian rail and SA1 zones within the Melbourne CBD - North SA2 zone, hourly SI values for January 16, 2024, first 75 SA1 zones, zeroed columns excluded." )
+
+
+```
+
+
+
+This appears to meet expectations, with SI scores peaking in the morning (8-9) and evening (17-18). A lot of the SA1 zones have identical SI scores because ALL of their area is within the 800m buffer distance of a railway station, meaning that the area terms cancel out and are equal to one.  
+
+The below figure maps this output. 
+
+
+
+
+```{r Melbourne_CBD_north_rail_map, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.fullwidth = TRUE, fig.cap="Victorian rail and SA1 zones within the Melbourne CBD - North SA2 zone,SI values for January 16, 2024, by hour"}
+
+#Join SI to map data
+si_by_area_and_hour <- left_join(areas_of_interest, si_by_area_and_hour)
+
+si_by_area_and_hour$hour_starting <- as_factor(si_by_area_and_hour$hour_starting)
+
+ggplot() + 
+  geom_sf(data=si_by_area_and_hour,
+          aes(fill = SI)) +
+            facet_wrap(vars(hour_starting)) +
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+  )
+
+```
+
+In general, the SI scores appear to match expectations. SA1 zones closer to Melbourne Central and Flagstaff have higher scores.
+
+
 ### Full SI calculation
 
+This section runs the SI calculation for all modes (lrt, rail, bus) on SA1 zones within the Melbourne CBD - North SA2 zone. Here verbose is set as FALSE to cut down on the amount of output displayed. 
 
-```{r Melbourne_CBD_north_test_check_whole_function_all, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, trams, by stop, first six stops"}
+```{r Melbourne_CBD_north_all_stops_in_walk_dist, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.margin = FALSE, fig.cap = c("Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, rail", "Catchment of each stop within each area of interest, Melbourne CBD - North SA1 zones, rail, by stop, first six stops")}
 
-list_gtfs = ptv_231228_trams_only
+
+list_gtfs = ptv_231228_list_gtfs
 
 areas_of_interest <- load_areas_of_interest(absmapsdata::sa12021 %>% filter(sa2_name_2021 == "Melbourne CBD - North") %>% select(sa1_code_2021),  area_id_field = "sa1_code_2021")
 
@@ -1070,14 +1171,59 @@ stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   verbose = FALSE
 )
 
-si_by_area_and_hour_wider <- hourly(list_gtfs = list_gtfs,
-                                    stops_in_or_near_areas = stops_in_or_near_areas, 
-                                    date_ymd = "2024-01-15")
+#si_by_route_type <- si_calc(
+#    list_gtfs = list_gtfs,
+#    stops_in_or_near_areas = stops_in_or_near_areas, 
+#    date_ymd = lubridate::ymd("2024-01-16"), 
+#    start_hms = lubridate::hms("10:30:00"),
+#    end_hms = lubridate::hms("16:00:00"),
+#    verbose = TRUE)
 
-si_by_area_and_hour_wider %>% adorn_totals(where = "col") %>% kable(caption = "SA1 zones within the Melbourne CBD - North SA2 zone, hourly SI values for January 15, 2024")
+#si_by_route_type %>% head() %>% kable(caption = "SI values for SA1 zones with the Melbourne CBD - North SA2 for 10:30am to 4pm on January 16, 2024, first 6 SA1 zones")
+
+
+si_by_area_and_hour <- hourly(
+  list_gtfs = list_gtfs, 
+  stops_in_or_near_areas = stops_in_or_near_areas, 
+  date_ymd = "2024-01-16")
+
+#pivot to wider for display as table
+si_by_area_and_hour_wider <- si_by_area_and_hour %>% pivot_wider(names_from = hour_starting, values_from = SI)
+
+si_by_area_and_hour_wider %>% select(1, 4:24) %>% head(n=75) %>% adorn_rounding(digits = 0) %>% kable(caption = "Victorian GTFS and SA1 zones within the Melbourne CBD - North SA2 zone, hourly SI values for January 16, 2024, first 75 SA1 zones, zeroed columns excluded." )
 
 
 ```
+
+
+
+This appears to meet expectations, with SI scores peaking in the morning (8-9) and evening (17-18).
+
+The below figure maps this output. 
+
+
+
+
+```{r Melbourne_CBD_north_all_map, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, fig.fullwidth = TRUE, fig.cap="Victorian rail and SA1 zones within the Melbourne CBD - North SA2 zone,SI values for January 16, 2024, by hour"}
+
+#Join SI to map data
+si_by_area_and_hour <- left_join(areas_of_interest, si_by_area_and_hour)
+
+si_by_area_and_hour$hour_starting <- as_factor(si_by_area_and_hour$hour_starting)
+
+ggplot() + 
+  geom_sf(data=si_by_area_and_hour,
+          aes(fill = SI)) +
+            facet_wrap(vars(hour_starting)) +
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+  )
+
+```
+
+In general, the SI scores appear to match expectations. SA1 zones closer to Melbourne Central and Flagstaff have higher scores.
 
 
 ```

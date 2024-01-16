@@ -23,8 +23,8 @@
 #'  mustWork = TRUE))
 #'
 #'areas_of_interest <- load_areas_of_interest(absmapsdata::sa22021 %>% 
-#'             filter(sa3_name_2021 ==  "Mornington Peninsula") %>% 
-#'                                              select(sa2_code_2021),  
+#'             dplyr::filter(sa3_name_2021 ==  "Mornington Peninsula") %>% 
+#'                                              dplyr::select(sa2_code_2021),  
 #'                                            area_id_field = "sa2_code_2021")
 #'
 #'buffer_distance <- gtfssupplyindex:::load_buffer_zones()
@@ -106,8 +106,8 @@ si_calc <- function(
 #'  mustWork = TRUE))
 #'
 #'areas_of_interest <- load_areas_of_interest(absmapsdata::sa22021 %>% 
-#'                                              filter(sa3_name_2021 == "Mornington Peninsula") %>% 
-#'                                              select(sa2_code_2021),  
+#'                                              dplyr::filter(sa3_name_2021 == "Mornington Peninsula") %>% 
+#'                                              dplyr::select(sa2_code_2021),  
 #'                                            area_id_field = "sa2_code_2021")
 #'
 #'buffer_distance <- gtfssupplyindex:::load_buffer_zones()
@@ -154,7 +154,7 @@ si_calc_one_route <- function(
   )
   
   #join number of arrivals per stop to the stops_in_or_near_areas table
-  stops_in_or_near_areas_dataframe_and_route_type[[1]] <- left_join(
+  stops_in_or_near_areas_dataframe_and_route_type[[1]] <- dplyr::left_join(
     stops_in_or_near_areas_dataframe_and_route_type[[1]], 
     arrivals_by_stop_id, 
     by = "stop_id")

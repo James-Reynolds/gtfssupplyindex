@@ -45,8 +45,8 @@ list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
  mustWork = TRUE))
 
 areas_of_interest <- load_areas_of_interest(absmapsdata::sa22021 \%>\% 
-            filter(sa3_name_2021 ==  "Mornington Peninsula") \%>\% 
-                                             select(sa2_code_2021),  
+            dplyr::filter(sa3_name_2021 ==  "Mornington Peninsula") \%>\% 
+                                             dplyr::select(sa2_code_2021),  
                                            area_id_field = "sa2_code_2021")
 
 buffer_distance <- gtfssupplyindex:::load_buffer_zones()
