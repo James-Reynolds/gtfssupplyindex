@@ -1022,7 +1022,8 @@ Running the hourly function for January 16, 2024 gives the following output:
 si_by_area_and_hour <- hourly(
   list_gtfs = ptv_231228_trams_only_list_gtfs, 
   stops_in_or_near_areas = stops_in_or_near_areas, 
-  date_ymd = "2024-01-16")
+  date_ymd = "2024-01-16",
+  verbose = TRUE)
 
 #pivot to wider for display as table
 si_by_area_and_hour_wider <- si_by_area_and_hour %>% pivot_wider(names_from = hour_starting, values_from = SI)

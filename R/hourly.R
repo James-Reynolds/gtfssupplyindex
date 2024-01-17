@@ -6,6 +6,7 @@
 #' A list (by route_type) of stops and areas within walking distance of each other 
 #' and the associated area_terms of SI calculation
 #' @param date_ymd The date of interest
+#' @param verbose Print details of progress during calculations
 #'
 #' @return A tibble with SI for each combination of area and hour of service
 #' @export
@@ -38,7 +39,8 @@
 hourly <- function(
     list_gtfs, 
     stops_in_or_near_areas,
-    date_ymd)
+    date_ymd, 
+    verbose = FALSE)
 {
   
 #find first and last arrival times across the list of gtfs  
@@ -61,14 +63,14 @@ si_by_area_and_hour <- data.frame()
 for(i in seq(first_hour, last_hour)){
   start_hms <- lubridate::hms(paste(i, ms))
   end_hms <- start_hms + lubridate::hms("1:00:00")
-
+  if(verbose){print(paste("Now calculating", start_hms, "to", end_hms))}
   si_by_route_type <- gtfssupplyindex::si_calc(
     list_gtfs = list_gtfs,
     stops_in_or_near_areas = stops_in_or_near_areas, 
     date_ymd = date_ymd, 
     start_hms = start_hms,
     end_hms = end_hms,
-    verbose = TRUE)
+    verbose = verbose)
 
   si_by_area <- si_total(si_by_route_type)
   si_by_area$hour_starting <- paste(as.character(lubridate::hour(start_hms)), ":00", sep = "")

@@ -4,7 +4,7 @@
 \alias{hourly}
 \title{Calculate SI for each hour (of service) on a given date, by area_of_interest}
 \usage{
-hourly(list_gtfs, stops_in_or_near_areas, date_ymd)
+hourly(list_gtfs, stops_in_or_near_areas, date_ymd, verbose = FALSE)
 }
 \arguments{
 \item{list_gtfs}{Output of the gtfs_by_route_type function,
@@ -15,6 +15,8 @@ A list (by route_type) of stops and areas within walking distance of each other
 and the associated area_terms of SI calculation}
 
 \item{date_ymd}{The date of interest}
+
+\item{verbose}{Print details of progress during calculations}
 }
 \value{
 A tibble with SI for each combination of area and hour of service

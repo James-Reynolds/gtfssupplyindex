@@ -141,8 +141,9 @@ si_calc_one_route <- function(
     date_ymd, 
     start_hms,
     end_hms,
-    verbose = FALSE){
+    verbose = verbose){
 
+  if(verbose){print(paste("Now calculating", stops_in_or_near_areas_dataframe_and_route_type[[2]]))}
   #obtain the arrivals by stop_id using arrivals function
   arrivals_by_stop_id <- gtfssupplyindex::arrivals(
     gtfs = list_gtfs[[stops_in_or_near_areas_dataframe_and_route_type[[2]]

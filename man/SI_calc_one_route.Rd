@@ -10,7 +10,7 @@ si_calc_one_route(
   date_ymd,
   start_hms,
   end_hms,
-  verbose = FALSE
+  verbose = verbose
 )
 }
 \arguments{
