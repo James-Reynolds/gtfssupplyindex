@@ -37,7 +37,7 @@ areas_of_interest <- load_areas_of_interest(areas_of_interest = sf::st_read(syst
 
 # map the areas_of_interest
 map <- areas_of_interest %>% 
-  ggplot() +
+  ggplot2::ggplot() +
   geom_sf(aes(geometry = geometry))
 map
 #set the EPSG to transform from lat/lon to metres

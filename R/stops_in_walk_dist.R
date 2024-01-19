@@ -98,7 +98,7 @@ stops_in_walk_dist_one_route <- function(
   stops_in_or_near_areas <- sf::st_intersection(areas_of_interest, circles_around_stops)
   if(verbose){ 
     # plot only first 6 stops
-    plot_area_bn <- ggplot() + 
+    plot_area_bn <- ggplot2::ggplot() + 
         geom_sf(data=stops_in_or_near_areas, aes(fill = area_id)) + 
         theme(legend.position = "none")
     print(plot_area_bn)
