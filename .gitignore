@@ -2,6 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+.RDataTm*
+
 
 # knitr and R markdown default cache directories
 *_cache/
@@ -25,3 +27,4 @@ rsconnect/
 
 # data directory with large GTFS feeds
 data/
+inst/doc

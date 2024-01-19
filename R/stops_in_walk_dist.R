@@ -20,7 +20,7 @@ stops_in_walk_dist <- function(
 
   # load buffer distances
   buffer_distance = gtfssupplyindex:::load_buffer_zones()
-  if(verbose){head(buffer_distance) %>% kable(caption = "Step 1, load the buffer distances. This table shows the first 6 entries in the buffer_distance table")}
+  if(verbose){head(buffer_distance) %>% knitr::kable(caption = "Step 1, load the buffer distances. This table shows the first 6 entries in the buffer_distance table")}
   
  # # Keep only buffer distance definitions for those routes_types in the gtfs
 #  buffer_distance <- buffer_distance[ 
@@ -40,8 +40,8 @@ stops_in_walk_dist <- function(
     list_gtfs, names(list_gtfs), SIMPLIFY=FALSE)
   
   if(verbose){
-    names(list_gtfs[[1]]) %>% kable(caption = "Step 1, continued: This table shows the objects included in the 'rail' tidygtfs object, with the addition of a 'buffer_distance' object")
-    list_gtfs[[1]]$buffer_distance %>% kable(caption = "Step 1, continued: This is the contents of the buffer_distance object, matching the 800m catchment zones of railway stations")
+    names(list_gtfs[[1]]) %>% knitr::kable(caption = "Step 1, continued: This table shows the objects included in the 'rail' tidygtfs object, with the addition of a 'buffer_distance' object")
+    list_gtfs[[1]]$buffer_distance %>% knitr::kable(caption = "Step 1, continued: This is the contents of the buffer_distance object, matching the 800m catchment zones of railway stations")
   }
   
   
@@ -50,7 +50,7 @@ stops_in_walk_dist <- function(
  
   # calculate Area_area terms
   areas_of_interest$area_area <- sf::st_area(areas_of_interest)
-  if(verbose){head(areas_of_interest %>% st_drop_geometry()) %>% kable(caption = "Step 2, areas for each of the areas_of_interest")}
+  if(verbose){head(areas_of_interest %>% st_drop_geometry()) %>% knitr::kable(caption = "Step 2, areas for each of the areas_of_interest")}
  
   # apply stops_in_walk_dist_one_route function to list (by route) of tidy_gtfs
   stops_in_or_near_areas <- lapply(list_gtfs, stops_in_walk_dist_one_route,
@@ -89,7 +89,7 @@ stops_in_walk_dist_one_route <- function(
   
   # transform stops to CRS in metres
   stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
-  if(verbose){head(stops_as_sf) %>% kable(caption = "The list of stop extracted from the rail tidygtfs object and transformed into metres")}
+  if(verbose){head(stops_as_sf) %>% knitr::kable(caption = "The list of stop extracted from the rail tidygtfs object and transformed into metres")}
   
   #draw radius around stops of the buffer zone
   circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = gtfs_single_route_type$buffer_distance)
@@ -137,7 +137,7 @@ stops_in_walk_dist_one_route <- function(
   stops_in_or_near_areas$area_terms <- as.numeric(stops_in_or_near_areas$area_terms)
   
   if(verbose){head(stops_in_or_near_areas %>% dplyr::select(stop_id, area_id, area_terms)) %>%
-    kable(caption = "The calculated area_terms for each combination of area and stop")}
+    knitr::kable(caption = "The calculated area_terms for each combination of area and stop")}
   
   return(stops_in_or_near_areas %>% dplyr::select(stop_id, area_id, area_terms))
   
