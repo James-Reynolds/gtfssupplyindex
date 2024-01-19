@@ -85,7 +85,7 @@ stops_in_walk_dist_one_route <- function(
   
   # map the stops onto the areas_of_interest for the first element in the list
   #map + 
-  #  geom_sf(data=list_of_stops_as_sf[[1]], size = 2)
+  #  ggplot2::geom_sf(data=list_of_stops_as_sf[[1]], size = 2)
   
   # transform stops to CRS in metres
   stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
@@ -99,21 +99,21 @@ stops_in_walk_dist_one_route <- function(
   if(verbose){ 
     # plot only first 6 stops
     plot_area_bn <- ggplot2::ggplot() + 
-        geom_sf(data=stops_in_or_near_areas, aes(fill = area_id)) + 
-        theme(legend.position = "none")
+        ggplot2::geom_sf(data=stops_in_or_near_areas, ggplot2::aes(fill = area_id)) + 
+      ggplot2::theme(legend.position = "none")
     print(plot_area_bn)
   
     
     
     # plot for each stop, but only first six
-    print(ggplot() + 
-            geom_sf(data=stops_in_or_near_areas %>% 
+    print(ggplot2::ggplot() + 
+            ggplot2::geom_sf(data=stops_in_or_near_areas %>% 
                       dplyr::filter(stop_id %in%
                                (stops_in_or_near_areas$stop_id %>%
                                   unique() %>% head()))
-                    , aes(fill = area_id)) + 
-            theme(legend.position = "none") +
-            facet_wrap(vars(stop_id))
+                    , ggplot2::aes(fill = area_id)) + 
+            ggplot2::theme(legend.position = "none") +
+            ggplot2::facet_wrap(vars(stop_id))
     )
     # plot for each stop and area
     #     print(plot_area_bn +  
