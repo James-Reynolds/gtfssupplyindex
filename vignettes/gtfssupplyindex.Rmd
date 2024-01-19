@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(dplyr)
-library(gtfssupplyindex)
+#library(gtfssupplyindex)
 ```
 
 # Introduction
@@ -90,7 +90,49 @@ The package takes input from three files:
 
 Outputs can be generated in various formats, including the si_by_route_type table, si_by_area table and, if hourly values are desired, the si_by_area_and_hour table (bottom of ERD shown above)
 
-The package includes a GTFS dataset from the [Mornington Penninsula Tourist Railway](https://transitfeeds.com/p/mornington-railway/806/latest) as sample data. Minor alternations have been made to the GTFS dataset to updated the route_colour field (as tidytransit throws an error if this is not present) and to change the route type to 2. The original feed uses a route_type of 107, which correlates with "tourist railway" in the extended GTFS route type definitions, which is not yet supported by all R packages related to GTFS analysis. 
+The package includes a GTFS dataset from the [Mornington Penninsula Tourist Railway](https://transitfeeds.com/p/mornington-railway/806/latest) as sample data. Minor alternations have been made to the GTFS dataset to updated the route_colour field (as tidytransit throws an error if this is not present) and to change the route type to 2 ("rail"). The original feed uses a route_type of 107, which correlates with "tourist railway" in the extended GTFS route type definitions, which is not yet supported by all R packages related to GTFS analysis. 
 
+GTFS data is first loaded, with the gtfs_by_route_type function splitting this into a list (by route_type) of tidygtfs objects. This is achieved using the filter_by_route_type() function from the [gtfstools package](https://cran.r-project.org/web/packages/gtfstools/index.html).
 
+```{r load_mornington_GTFS data, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
+  "extdata/mornington180109",
+  "gtfs.zip", 
+  package = "gtfssupplyindex", 
+  mustWork = TRUE))
+
+```
+
+Geographical data about the areas of interest are loaded by the load_areas_of_interest() function into an [sf object](https://r-spatial.github.io/sf/). The resultant areas_of_interest table contains each area_id and its associated geometry.   
+
+```{r load_ABS data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+areas_of_interest <- load_areas_of_interest(areas_of_interest = sf::st_read(system.file(
+  "extdata",
+  "mornington_sa12021.geojson", 
+  package = "gtfssupplyindex", 
+  mustWork = TRUE)), 
+  area_id_field = "sa1_code_2021")
+head(areas_of_interest) %>% knitr::kable(caption = "First 6 entries in areas_of_interest table")
+
+```
+
+Data about buffer zones, specifically the walking distance threshold assigned to each route_type (mode) is then loaded with the load_buffer_zone() function. The package includes this information in a csv file, in which it is assumed that the buffer zone is defined in metres. 
+
+```{r load_buffer_distance_data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+head(buffer_distance) %>% knitr::kable(caption = "First six entries in buffer_distance definitions")
+```
+
+The stops_in_walk_dist() function then generates a list (by route_type) in which each element is a datatable describing which stops are within walking distance of which areas of interest. Each table entry includes a stop_id, an area_id that is within the buffer_distance threshold of that stop, and the corresponding area related terms in the SI calculation^[This is the $Area_{Bn} / Area_{Area}$ bit]. 
+
+```{r calculate_stop_in_or_near_areas, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  EPSG_for_transform = 28355, 
+  verbose = TRUE
+)
+
+head(stops_in_or_near_areas[[1]]) %>% knitr::kable(caption = "'Rail' element of the stops_in_or_near_areas list for the Mornington Pennisula datasets, first six entries")
 ```

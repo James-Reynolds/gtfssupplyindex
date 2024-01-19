@@ -50,7 +50,7 @@ stops_in_walk_dist <- function(
  
   # calculate Area_area terms
   areas_of_interest$area_area <- sf::st_area(areas_of_interest)
-  if(verbose){head(areas_of_interest %>% st_drop_geometry()) %>% knitr::kable(caption = "Step 2, areas for each of the areas_of_interest")}
+  if(verbose){head(areas_of_interest %>% sf::st_drop_geometry()) %>% knitr::kable(caption = "Step 2, areas for each of the areas_of_interest")}
  
   # apply stops_in_walk_dist_one_route function to list (by route) of tidy_gtfs
   stops_in_or_near_areas <- lapply(list_gtfs, stops_in_walk_dist_one_route,
