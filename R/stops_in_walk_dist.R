@@ -89,7 +89,7 @@ stops_in_walk_dist_one_route <- function(
   
   # transform stops to CRS in metres
   stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
-  if(verbose){head(stops_as_sf) %>% knitr::kable(caption = "The list of stop extracted from the rail tidygtfs object and transformed into metres")}
+  if(verbose){head(stops_as_sf) %>% knitr::kable(caption = "The list of stops extracted from the rail tidygtfs object and transformed into metres")}
   
   #draw radius around stops of the buffer zone
   circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = gtfs_single_route_type$buffer_distance)
@@ -100,7 +100,12 @@ stops_in_walk_dist_one_route <- function(
     # plot only first 6 stops
     plot_area_bn <- ggplot2::ggplot() + 
         ggplot2::geom_sf(data=stops_in_or_near_areas, ggplot2::aes(fill = area_id)) + 
-      ggplot2::theme(legend.position = "none")
+      ggplot2::theme(legend.position = "none", 
+                     axis.text.x=ggplot2::element_blank(), #remove x axis labels
+                     axis.ticks.x=ggplot2::element_blank(), #remove x axis ticks
+                     axis.text.y=ggplot2::element_blank(),  #remove y axis labels
+                     axis.ticks.y=ggplot2::element_blank()  #remove y axis ticks
+                     ) 
     print(plot_area_bn)
   
     
@@ -112,13 +117,15 @@ stops_in_walk_dist_one_route <- function(
                                (stops_in_or_near_areas$stop_id %>%
                                   unique() %>% head()))
                     , ggplot2::aes(fill = area_id)) + 
-            ggplot2::theme(legend.position = "none") +
+            ggplot2::theme(legend.position = "none", 
+                           axis.text.x=ggplot2::element_blank(), #remove x axis labels
+                           axis.ticks.x=ggplot2::element_blank(), #remove x axis ticks
+                           axis.text.y=ggplot2::element_blank(),  #remove y axis labels
+                           axis.ticks.y=ggplot2::element_blank()  #remove y axis ticks
+                           ) +
             ggplot2::facet_wrap(vars(stop_id))
     )
-    # plot for each stop and area
-    #     print(plot_area_bn +  
-    #         facet_grid(cols =vars(stop_id), rows = vars(area_id))
-    #  )
+ 
   }
   
   

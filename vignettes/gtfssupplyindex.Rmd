@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, include = FALSE}
 library(dplyr)
 library(gtfssupplyindex)
 ```
@@ -24,27 +24,9 @@ library(gtfssupplyindex)
 # Introduction
 
 Use the gtfssupplyindex package to calculate Transit Supply Index (SI) scores 
-from General Transit Feed Specification (GTFS) datasets.  The Transit Supply Index (SI) was developed in [Currie, G and Senbergs, Z (2007), Identifying spatial gaps in public transport provision for socially disadvantaged Australians – the Melbourne ‘needs-gap’ study](https://www.researchgate.net/profile/Graham-Currie/publication/37183562_Identifying_spatial_gaps_in_public_transport_provision_for_socially_disadvantaged_Australians_the_Melbourne_%27Needs-Gap%27_Study/links/0fcfd5097adf8d4656000000/Identifying-spatial-gaps-in-public-transport-provision-for-socially-disadvantaged-Australians-the-Melbourne-Needs-Gap-Study.pdf), presented at the Australasian Transport Research Forum.  
-
-
-# Installation & Dependencies
-
-This package requires the sf, gtfstools and tidytransit packages (amongst others). 
-
-```{r install, eval = FALSE}
-# Install devtools to allow package to be downloaded from github repository
-install.packages("devtools") 
-devtools::install_github("James-Reynolds/gtfssupplyindex")
-
-```
-
-# Background
-
-## General Transit Feed Specification (GTFS)
-The [tidytransit](https://cran.r-project.org/web/packages/tidytransit/vignettes/introduction.html) package has information and links relevant to the GTFS. 
-
-## Transit Supply Index
-The Transit Supply Index (SI) developed in [Currie, G and Senbergs, Z (2007)](https://www.researchgate.net/profile/Graham-Currie/publication/37183562_Identifying_spatial_gaps_in_public_transport_provision_for_socially_disadvantaged_Australians_the_Melbourne_%27Needs-Gap%27_Study/links/0fcfd5097adf8d4656000000/Identifying-spatial-gaps-in-public-transport-provision-for-socially-disadvantaged-Australians-the-Melbourne-Needs-Gap-Study.pdf) is shown below:
+from General Transit Feed Specification (GTFS) datasets.  The Transit Supply Index (SI) was developed in [Currie, G and Senbergs, Z (2007)](https://www.researchgate.net/profile/Graham-Currie/publication/37183562_Identifying_spatial_gaps_in_public_transport_provision_for_socially_disadvantaged_Australians_the_Melbourne_%27Needs-Gap%27_Study/links/0fcfd5097adf8d4656000000/Identifying-spatial-gaps-in-public-transport-provision-for-socially-disadvantaged-Australians-the-Melbourne-Needs-Gap-Study.pdf). A generalised equation^[The focus of Currie and Senbergs (2007) 
+was on the context of Melbourne's Census Collection Districts (CCD) 
+and calculations based on a week of transit service. The equation shown has been adjusted so that it is generalised to all times and areas of interest.] for the SI is as follows:
 
 \begin{equation}
   SI_{area, time} = \sum{\frac{Area_{Bn}}{Area_{area}}*SL_{n, time}}
@@ -62,18 +44,20 @@ and 800 metres for railway stations;
 - $SL_{n,time}$ is the number of transit arrivals for each stop 
 for a given time period.
 
-Minor adjustments have been made 
-to generalise the equation, 
-as the focus of Currie and Senbergs (2007) 
-was on the context of Melbourne's Census Collection Districts (CCD) 
-and calculations based on a week of transit service. 
-CCDs predate the introduction of 
-Statistical Areas 1, 2, 3, and 4 (SA1, SA2, SA3, SA4), 
-and other geographical divisions 
-currently used by the Australian Bureau of Statistics (ABS), 
-which may be more familiar to some readers.
 
-# gtfssupplyindex structure and function
+
+# Installation & Dependencies
+
+This package requires the sf, gtfstools and tidytransit packages (amongst others). 
+
+```{r install, eval = FALSE}
+# Install devtools to allow package to be downloaded from github repository
+install.packages("devtools") 
+#devtools::install_github("James-Reynolds/gtfssupplyindex")
+
+```
+
+# Package structure and functions
 
 The structure and functions used to generate each table are shown in the below Entity Relationship Diagram (ERD). 
 
@@ -84,15 +68,21 @@ knitr::include_graphics("graphics/SI_data_structure.png")
 
 The package takes input from three files: 
 
-- a gtfs feed (gtfs.zip)
-- a sf object describing the geometry of the areas for which the SI is to be calculated
+- a gtfs feed (gtfs.zip);
+- a sf object describing the geometry of the areas for which the SI is to be calculated; and
 - a csv file defining the buffer zone distances (in metres) for each route_type - a version of this file is included in the package. 
 
-Outputs can be generated in various formats, including the si_by_route_type table, si_by_area table and, if hourly values are desired, the si_by_area_and_hour table (bottom of ERD shown above)
+Outputs can be generated in various formats including: 
 
-The package includes a GTFS dataset from the [Mornington Penninsula Tourist Railway](https://transitfeeds.com/p/mornington-railway/806/latest) as sample data. Minor alternations have been made to the GTFS dataset to updated the route_colour field (as tidytransit throws an error if this is not present) and to change the route type to 2 ("rail"). The original feed uses a route_type of 107, which correlates with "tourist railway" in the extended GTFS route type definitions, which is not yet supported by all R packages related to GTFS analysis. 
+- an si_by_route_type list of tables (bottom-left), showing SI scores by area for each route type (mode) on a specific day; 
+- an si_by_area table (bottom-centre), showing SI scores for each area for all route types (modes) on a specific day; and
+- an si_by_area_and_hour table (bottom-right), showing a SI score for each area and each hour of a specific day. 
 
-GTFS data is first loaded, with the gtfs_by_route_type function splitting this into a list (by route_type) of tidygtfs objects. This is achieved using the filter_by_route_type() function from the [gtfstools package](https://cran.r-project.org/web/packages/gtfstools/index.html).
+# Sample calculation
+
+The package includes a GTFS dataset from the [Mornington Penninsula Tourist Railway](https://transitfeeds.com/p/mornington-railway/806/latest) as sample data. Minor alternations have been made to this GTFS dataset^[The route_colour field has been updated as tidytransit throws an error if this is not present. As well, the route type has been changed to 2 ("rail"). The original feed uses a route_type of 107, which correlates with "tourist railway" in the extended GTFS route type definitions, which is not yet supported by all R packages related to GTFS analysis.].
+
+1. The GTFS data is first loaded, with the gtfs_by_route_type function splitting this into a list (by route_type) of tidygtfs objects. This is achieved using the filter_by_route_type() function from the [gtfstools package](https://cran.r-project.org/web/packages/gtfstools/index.html).
 
 ```{r load_mornington_GTFS data, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 #load the revised mornington GTFS data
@@ -104,9 +94,9 @@ list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
 
 ```
 
-Geographical data about the areas of interest are loaded by the load_areas_of_interest() function into an [sf object](https://r-spatial.github.io/sf/). The resultant areas_of_interest table contains each area_id and its associated geometry.   
+2. Geographical data about the areas of interest are loaded by the load_areas_of_interest() function into an [sf object](https://r-spatial.github.io/sf/). The resultant areas_of_interest table contains each area_id and its associated geometry.   
 
-```{r load_ABS data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+```{r load_ABS data, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 areas_of_interest <- load_areas_of_interest(areas_of_interest = sf::st_read(system.file(
   "extdata",
   "mornington_sa12021.geojson", 
@@ -117,16 +107,19 @@ head(areas_of_interest) %>% knitr::kable(caption = "First 6 entries in areas_of_
 
 ```
 
-Data about buffer zones, specifically the walking distance threshold assigned to each route_type (mode) is then loaded with the load_buffer_zone() function. The package includes this information in a csv file, in which it is assumed that the buffer zone is defined in metres. 
+3. Data about buffer zones, specifically the walking distance threshold assigned to each route_type (mode) is then loaded with the load_buffer_zone() function. The package includes this information in a csv file, in which it is assumed that the buffer zone is defined in metres. 
 
-```{r load_buffer_distance_data, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+```{r load_buffer_distance_data, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 buffer_distance <- gtfssupplyindex:::load_buffer_zones()
 head(buffer_distance) %>% knitr::kable(caption = "First six entries in buffer_distance definitions")
 ```
 
-The stops_in_walk_dist() function then generates a list (by route_type) in which each element is a datatable describing which stops are within walking distance of which areas of interest. Each table entry includes a stop_id, an area_id that is within the buffer_distance threshold of that stop, and the corresponding area related terms in the SI calculation^[This is the $Area_{Bn} / Area_{Area}$ bit]. 
+4. The stops_in_walk_dist() function is then used to generate a list (by route_type) in which each element is a datatable describing which stops are within walking distance of which areas of interest. Each table entry includes a stop_id, an area_id that is within the buffer_distance threshold of that stop, and the corresponding area related terms in the SI calculation^[This is the $Area_{Bn} / Area_{Area}$ bit]. 
 
-```{r calculate_stop_in_or_near_areas, echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+Running the stops_in_walk_dist() function with verbose = TRUE will make it print the intersection of the catchment areas of each stop 
+
+
+```{r calculate_stop_in_or_near_areas, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
 stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
   list_gtfs = list_gtfs, 
   areas_of_interest = areas_of_interest,
