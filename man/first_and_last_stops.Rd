@@ -18,3 +18,14 @@ trip_destination_id and last_stop_sequence_value
 Function to identify the first and last stops (id, name and stop_sequence)
 for each route in a tidygtfs object
 }
+\examples{
+gtfs <- tidytransit::read_gtfs(system.file(
+"extdata/mornington180109", 
+"gtfs.zip", 
+package = "gtfssupplyindex", 
+mustWork = TRUE))
+
+first_and_last_stops(gtfs)
+
+
+}

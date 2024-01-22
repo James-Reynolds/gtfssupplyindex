@@ -29,3 +29,17 @@ A dataframe listing the number of arrivals for each stop_id in the specified tim
 \description{
 This function is a modification of the example shown in https://r-transit.github.io/tidytransit/articles/timetable.html
 }
+\examples{
+gtfs <- tidytransit::read_gtfs(system.file(
+"extdata/mornington180109", 
+"gtfs.zip", 
+package = "gtfssupplyindex", 
+mustWork = TRUE))
+
+arrivals(gtfs = gtfs, 
+stop_ids = data.frame(stop_id = "1388695887"),
+date_ymd = lubridate::ymd("2018-12-30"))
+
+
+
+}

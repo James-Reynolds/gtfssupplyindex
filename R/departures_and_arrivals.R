@@ -10,10 +10,20 @@
 #'
 #' @return A dataframe listing the number of departures for each stop_id in the specified time frame.
 #'
-#' @examples
-#'
-#'
 #' @export
+#' 
+#' @examples 
+#' gtfs <- tidytransit::read_gtfs(system.file(
+#' "extdata/mornington180109", 
+#' "gtfs.zip", 
+#' package = "gtfssupplyindex", 
+#' mustWork = TRUE))
+#'
+#' departures(gtfs = gtfs, 
+#'           stop_ids = data.frame(stop_id = "1388695887"),
+#'           date_ymd = lubridate::ymd("2018-12-30"))
+#'
+#'
 
 departures <- function(gtfs = gtfs,
                        stop_ids = stop_ids,
@@ -95,7 +105,17 @@ departures <- function(gtfs = gtfs,
 #'
 #' @return A dataframe listing the number of arrivals for each stop_id in the specified time frame.
 #'
-#' @examples
+#'@examples 
+#' gtfs <- tidytransit::read_gtfs(system.file(
+#' "extdata/mornington180109", 
+#' "gtfs.zip", 
+#' package = "gtfssupplyindex", 
+#' mustWork = TRUE))
+#'
+#' arrivals(gtfs = gtfs, 
+#' stop_ids = data.frame(stop_id = "1388695887"),
+#' date_ymd = lubridate::ymd("2018-12-30"))
+#' 
 #' 
 #'
 #' @export
@@ -182,6 +202,15 @@ arrivals <- function(gtfs = gtfs,
 #' @export
 #'
 #' @examples
+#' gtfs <- tidytransit::read_gtfs(system.file(
+#' "extdata/mornington180109", 
+#' "gtfs.zip", 
+#' package = "gtfssupplyindex", 
+#' mustWork = TRUE))
+#' 
+#' first_and_last_stops(gtfs)
+#' 
+#' 
 first_and_last_stops <- function(gtfs = gtfs) {
   # This adapted from the tidytransit vignette on producing a departure timetable at https://r-transit.github.io/tidytransit/articles/timetable.html
   
@@ -260,4 +289,6 @@ first_and_last_stops <- function(gtfs = gtfs) {
   
   return(gtfs)
 }
+
+
 
