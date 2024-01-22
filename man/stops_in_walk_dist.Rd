@@ -28,3 +28,27 @@ list of dataframes, containing the stops_in_or_near_areas table for each individ
 \description{
 Calculate list of stops_in_or_near_areas tables (by route-type) from  list of tidygtfs (by route_type)
 }
+\examples{
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
+"extdata/mornington180109",
+"gtfs.zip", 
+package = "gtfssupplyindex", 
+mustWork = TRUE))
+
+areas_of_interest <- load_areas_of_interest(areas_of_interest = sf::st_read(system.file(
+"extdata",
+"mornington_sa12021.geojson", 
+package = "gtfssupplyindex", 
+mustWork = TRUE)), 
+area_id_field = "sa1_code_2021")
+
+buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+
+gtfssupplyindex:::stops_in_walk_dist(
+ list_gtfs = list_gtfs, 
+ areas_of_interest = areas_of_interest,
+ EPSG_for_transform = 28355, 
+ verbose = TRUE)
+  
+}

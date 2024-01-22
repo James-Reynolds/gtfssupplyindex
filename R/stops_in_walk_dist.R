@@ -12,6 +12,28 @@
 #' @export
 #'
 #' @examples
+#' #load the revised mornington GTFS data
+#' list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
+#' "extdata/mornington180109",
+#' "gtfs.zip", 
+#' package = "gtfssupplyindex", 
+#' mustWork = TRUE))
+#' 
+#' areas_of_interest <- load_areas_of_interest(areas_of_interest = sf::st_read(system.file(
+#' "extdata",
+#' "mornington_sa12021.geojson", 
+#' package = "gtfssupplyindex", 
+#' mustWork = TRUE)), 
+#' area_id_field = "sa1_code_2021")
+#' 
+#' buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+#' 
+#' gtfssupplyindex:::stops_in_walk_dist(
+#'  list_gtfs = list_gtfs, 
+#'  areas_of_interest = areas_of_interest,
+#'  EPSG_for_transform = 28355, 
+#'  verbose = TRUE)
+#'   
 stops_in_walk_dist <- function(
     list_gtfs,
     areas_of_interest,
@@ -72,6 +94,44 @@ stops_in_walk_dist <- function(
 #' @export
 #'
 #' @examples
+#' #load the revised mornington GTFS data
+#' list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file(
+#' "extdata/mornington180109",
+#' "gtfs.zip", 
+#' package = "gtfssupplyindex", 
+#' mustWork = TRUE))
+#' 
+#' areas_of_interest <- load_areas_of_interest(areas_of_interest = sf::st_read(system.file(
+#' "extdata",
+#' "mornington_sa12021.geojson", 
+#' package = "gtfssupplyindex", 
+#' mustWork = TRUE)), 
+#' area_id_field = "sa1_code_2021")
+#' 
+#' buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+#' 
+#' # add buffer_distance_length to list (by route) of tidy_gtfs
+#' list_gtfs <- mapply(function(x, nm){ 
+#' append(x, (buffer_distance_length = buffer_distance[which(
+#' buffer_distance$short_name %in% nm), "buffer_distance"]))}, 
+#' list_gtfs, names(list_gtfs), SIMPLIFY=FALSE)
+#'  
+#'  
+#'  # transform areas_of_interest to CRS in metres
+#'   EPSG_for_transform = 28355
+#'  areas_of_interest <- sf::st_transform(areas_of_interest, EPSG_for_transform)
+#'  
+#'  # calculate Area_area terms
+#'  areas_of_interest$area_area <- sf::st_area(areas_of_interest)
+#'   
+#' gtfssupplyindex:::stops_in_walk_dist_one_route(
+#'  gtfs_single_route_type = list_gtfs[[1]], 
+#'  areas_of_interest = areas_of_interest,
+#'  EPSG_for_transform = 28355, 
+#'  verbose = TRUE)
+#'   
+#' 
+#' 
 stops_in_walk_dist_one_route <- function(
     gtfs_single_route_type = list_gtfs[[1]],
     areas_of_interest,
@@ -123,7 +183,7 @@ stops_in_walk_dist_one_route <- function(
                            axis.text.y=ggplot2::element_blank(),  #remove y axis labels
                            axis.ticks.y=ggplot2::element_blank()  #remove y axis ticks
                            ) +
-            ggplot2::facet_wrap(vars(stop_id))
+            ggplot2::facet_wrap(ggplot2::vars(stop_id))
     )
  
   }
@@ -150,9 +210,6 @@ stops_in_walk_dist_one_route <- function(
   
 }
   
-
-
-
 
 
 

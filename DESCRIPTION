@@ -21,7 +21,8 @@ Imports:
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    sf
 Config/testthat/edition: 3
 Config/Needs/website: rmarkdown
 VignetteBuilder: knitr
