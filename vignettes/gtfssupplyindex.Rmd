@@ -53,7 +53,7 @@ This package requires the sf, gtfstools and tidytransit packages (amongst others
 ```{r install, eval = FALSE}
 # Install devtools to allow package to be downloaded from github repository
 install.packages("devtools") 
-#devtools::install_github("James-Reynolds/gtfssupplyindex")
+devtools::install_github("James-Reynolds/gtfssupplyindex")
 
 ```
 
@@ -116,7 +116,7 @@ head(buffer_distance) %>% knitr::kable(caption = "First six entries in buffer_di
 
 4. The stops_in_walk_dist() function is then used to generate a list (by route_type) in which each element is a datatable describing which stops are within walking distance of which areas of interest. Each table entry includes a stop_id, an area_id that is within the buffer_distance threshold of that stop, and the corresponding area related terms in the SI calculation^[This is the $Area_{Bn} / Area_{Area}$ bit]. 
 
-Running the stops_in_walk_dist() function with verbose = TRUE will make it print the intersection of the catchment areas of each stop 
+With verbose = TRUE the stops_in_walk_dist() function will plot the areas_of_interest in each stop's catchment (for the first 6 stops only), as a single plot and then facetted by stop_id, as shown below. Stop area_terms are also reported.  
 
 
 ```{r calculate_stop_in_or_near_areas, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
@@ -129,3 +129,82 @@ stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
 
 head(stops_in_or_near_areas[[1]]) %>% knitr::kable(caption = "'Rail' element of the stops_in_or_near_areas list for the Mornington Pennisula datasets, first six entries")
 ```
+
+In the plot above the catchments of three stops on the Mornington Peninsula Tourist Railway are shown. The catchments cover parts of around 30 different SA1 zones. If instead, the Monrington Peninsula SA3 zone is selected as the area of interest, as below:
+
+```{r calculate_stop_in_or_near_areas_SA3, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE, out.width='100%'}
+
+areas_of_interest <- load_areas_of_interest(areas_of_interest = sf::st_read(system.file(
+  "extdata",
+  "mornington_sa32021.geojson", 
+  package = "gtfssupplyindex", 
+  mustWork = TRUE)), 
+  area_id_field = "sa3_code_2021")
+head(areas_of_interest) %>% knitr::kable(caption = "First 6 entries in areas_of_interest table")
+
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  EPSG_for_transform = 28355, 
+  verbose = TRUE
+)
+
+head(stops_in_or_near_areas[[1]]) %>% knitr::kable(caption = "'Rail' element of the stops_in_or_near_areas list for the Mornington Pennisula datasets, first six entries")
+```
+
+The above shows how the catchments for all three stops are completely within the Mornington Peninsula SA3 zone, but make up only a small fraction of its area.  The area_terms variable represents the ${\frac{Area_{Bn}}{Area_{area}}} $ component of the SI calculation. In this case $Area_{Bn} = \pi800^2$ and ${Area_{area}}$ = `r round(sf::st_area(areas_of_interest), digits = 0)`^[Note, the ABS data gives a slightly different value for the area of the Mornington Peninsula SA3 zone than that output by the st_area function, but this is likely due to there being a slightly different methodology for calculating the area. The error is approximately 0.015%.], giving ${\frac{Area_{Bn}}{Area_{area}}}$ = `r round(pi * 800^2 / sf::st_area(areas_of_interest), digits = 5)`
+
+Continuing the SA3 calculation:
+
+5. The si_calc function is then used to output the si_by_route_type table.  In this instance we are looking at the services that ran on [December 30th, 2018](https://transitfeeds.com/p/mornington-railway/806/latest/stop/1388695887/20181230), which involved 4 trips to Mornington (trip_id 47-50) and 4 trips to Moorooduc (trip_id 54 to 57).  
+
+```{r SI_mornington_20181230_full_calc, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE}
+
+si_by_route_type <- gtfssupplyindex::si_calc(
+    list_gtfs = list_gtfs,
+    stops_in_or_near_areas = stops_in_or_near_areas, 
+    date_ymd = lubridate::ymd("2018-12-30"), 
+    start_hms = lubridate::hms("0:00:00"),
+    end_hms = lubridate::hms("23:59:59"),
+    verbose = TRUE)
+
+si_by_route_type %>% knitr::kable(caption = "SI values for Mornington Penninsula Railway services on 30/12/2018 (full day)")
+
+```
+
+This result is relatively easy to confirm by hand, as follows: 
+
+\begin{aligned}
+SI_{area, time} &= \sum{\frac{Area_{Bn}}{Area_{area}}*SL_{n, time}} \\
+
+SI_{area=21402, date=30-12-18} &= {\frac{Area_{stop1388695887}}{Area_{area=21402}}*SL_{stop1388695887, date=30-12-18}} \\
+& + 
+{\frac{Area_{stop1452182324}}{Area_{area=21402}}*SL_{stop1452182324, date=30-12-18}} \\
+& + {\frac{Area_{stop650916735}}{Area_{area=21402}}*SL_{stop650916735, date=30-12-18}} \\
+
+SI_{area=21402, date=30-12-18} &= 0.0027748 * 4 \\ 
+&+  0.0027748 * 8 \\
+&+  0.0027748 * 4 \\
+
+SI_{area=21402, date=30-12-18} &= 0.00444
+\end{aligned}
+
+6. The si_calc() function used above returns a list, each element of which is a datatable containing the area_id and SI scores for an individual mode. The Mornington Peninsular GTFS dataset contains only one route type ("rail"), so the output of the si_calc() function in this case is a list with only one element.  In the event, however, that there is more than one route type (mode) within the GTFS dataset the si_total() function can be used to aggregate the SI scores across modes into a single table
+
+```{r SI_mornington_20181230_total, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE}
+
+si_by_area <- si_by_route_type %>% si_total()
+
+```
+
+7. Finally, if SI values are desired on an hourly basis, the hourly() function can be used instead of the si_calc() function.  hourly() simply calls the si_calc() and si_total functions across each hour of service (e.g. 10:00 to 11:00):
+
+```{r SI_mornington_20181230_hourly, echo = TRUE, warning=FALSE, message=FALSE, cache=TRUE}
+
+
+si_by_area_and_hour <- gtfssupplyindex::hourly(list_gtfs, stops_in_or_near_areas, "2018-12-30")
+
+si_by_area_and_hour %>% head() %>% knitr::kable(caption = "Mornington Penninsula Tourist Railway hourly SI values for December 30, 2018, for SA3 zones")
+
+```
+

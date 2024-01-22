@@ -100,7 +100,7 @@ stops_in_walk_dist_one_route <- function(
     # plot only first 6 stops
     plot_area_bn <- ggplot2::ggplot() + 
         ggplot2::geom_sf(data=stops_in_or_near_areas, ggplot2::aes(fill = area_id)) + 
-      ggplot2::theme(legend.position = "none", 
+      ggplot2::theme(legend.position = "bottom", 
                      axis.text.x=ggplot2::element_blank(), #remove x axis labels
                      axis.ticks.x=ggplot2::element_blank(), #remove x axis ticks
                      axis.text.y=ggplot2::element_blank(),  #remove y axis labels
