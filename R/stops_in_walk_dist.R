@@ -44,13 +44,6 @@ stops_in_walk_dist <- function(
   buffer_distance = gtfssupplyindex:::load_buffer_zones()
   if(verbose){head(buffer_distance) %>% knitr::kable(caption = "Step 1, load the buffer distances. This table shows the first 6 entries in the buffer_distance table")}
   
- # # Keep only buffer distance definitions for those routes_types in the gtfs
-#  buffer_distance <- buffer_distance[ 
- #   which(
-#      buffer_distance$short_name %in% 
- #       names(list_gtfs))
-#    ,]
-  
   # add buffer_distance_length to list (by route) of tidy_gtfs
   list_gtfs <- mapply(function(x, nm){ 
     append(x, 
@@ -151,8 +144,8 @@ stops_in_walk_dist_one_route <- function(
   stops_as_sf <- stops_as_sf %>% sf::st_transform(crs = EPSG_for_transform)
   if(verbose){head(stops_as_sf) %>% knitr::kable(caption = "The list of stops extracted from the rail tidygtfs object and transformed into metres")}
   
-  #draw radius around stops of the buffer zone
-  circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = gtfs_single_route_type$buffer_distance)
+  #draw radius around stops of the buffer zone with buffer zone distance set in metres
+  circles_around_stops <- stops_as_sf %>% sf::st_buffer(dist = units::set_units(gtfs_single_route_type$buffer_distance,m))
  
   # Intersect the circles
   stops_in_or_near_areas <- sf::st_intersection(areas_of_interest, circles_around_stops)
