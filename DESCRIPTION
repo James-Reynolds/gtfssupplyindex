@@ -17,7 +17,8 @@ Imports:
     tibble,
     magrittr,
     gtfstools,
-    tidytransit
+    tidytransit,
+    plyr
 Suggests: 
     knitr,
     rmarkdown,
