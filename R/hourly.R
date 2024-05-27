@@ -8,7 +8,7 @@
 #' @param date_ymd The date of interest
 #' @param verbose Print details of progress during calculations
 #'
-#' @return A tibble with SI for each combination of area and hour of service
+#' @return A dataframe with SI for each combination of area and hour of service
 #' @export
 #'
 #' @examples
