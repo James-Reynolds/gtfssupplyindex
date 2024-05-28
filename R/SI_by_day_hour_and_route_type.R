@@ -73,7 +73,7 @@ SI_by_day_hour_and_route_type <- function(
   
   dates <- seq(as.Date(start_date_ymd), as.Date(end_date_ymd), by="days")
   for(i in as.list(dates)){
- 
+    if(verbose){print(paste("Now calculating", i))}
     # create table for output  
     si_by_area_route_and_hour <- data.frame()
   
