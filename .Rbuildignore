@@ -3,3 +3,4 @@
 ^LICENSE\.md$
 ^vignettes/articles$
 ^data/
+^README\.Rmd$

@@ -1,0 +1,78 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# gtfssupplyindex
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of gtfssupplyindex is to provide tools to calculate 
+the Transit Supply Index as per 
+Graham Currie (2010) 
+Quantifying spatial gaps in public transport supply based on social needs. 
+Journal of Transport Geography, 18 (1):31–41, 2010. ISSN 0966-6923. 
+doi: https://doi.org/10.1016/j.jtrangeo.2008.12.002. 
+URL https://www.sciencedirect. com/science/article/pii/S0966692308001518.
+
+
+## Installation
+
+You can install the development version of gtfssupplyindex from [GitHub](https://github.com/) with:
+
+
+
+``` r
+# install.packages("devtools")
+devtools::install_github("James-Reynolds/gtfssupplyindex")
+```
+
+## Example
+
+You can calculate the SI by day, hour, route and area of interest for 
+the Mornington Peninsula Tourist Railway (ncluded as a sample GTFS feed) 
+as follows:
+
+```{r example}
+library(gtfssupplyindex)
+####-----first load all the inputs
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type(system.file("extdata/mornington180109",
+"gtfs.zip", 
+package = "gtfssupplyindex", 
+mustWork = TRUE))
+ 
+areas_of_interest <- load_areas_of_interest(absmapsdata::sa22021 %>% 
+           dplyr::filter(sa3_name_2021 ==  "Mornington Peninsula") %>% 
+                                              dplyr::select(sa2_code_2021),  
+                                            area_id_field = "sa2_code_2021") 
+ buffer_distance <- gtfssupplyindex:::load_buffer_zones()
+ 
+ stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+ list_gtfs = list_gtfs, 
+ areas_of_interest = areas_of_interest,
+ EPSG_for_transform = 28355,
+ verbose = FALSE
+ )
+ 
+ SI_by_day_hour_and_route_type(
+ list_gtfs, 
+ stops_in_or_near_areas, 
+ "2018-12-23",
+ "2018-12-30",
+ verbose = FALSE)
+
+```
+
+See also the vignette at https://github.com/James-Reynolds/gtfssupplyindex/tree/main/vignettes
