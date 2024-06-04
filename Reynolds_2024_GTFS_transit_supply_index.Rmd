@@ -52,7 +52,7 @@ library(ggmap)
 library(units)
 library(janitor)
 library(mapview)
-library(ggstatsplot)
+#library(ggstatsplot)
 library(gtsummary)
 library(moments)
 library(scales)
@@ -1437,7 +1437,7 @@ si_by_area_and_hour_231015 <- hourly(
   date_ymd = "2023-10-15",
   verbose = TRUE)
 
-#write.csv(si_by_area_and_hour_231015, "results/Greater_Melbourne/si_by_SA12021area_and_hour_231015")
+write.csv(si_by_area_and_hour_231015, "results/Greater_Melbourne/si_by_SA12021area_and_hour_231015")
 
 
 ###Load results from CSV (Precalculated above) and make first column character

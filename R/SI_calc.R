@@ -144,35 +144,43 @@ si_calc_one_route <- function(
     verbose = verbose){
 
   if(verbose){print(paste("Now calculating", stops_in_or_near_areas_dataframe_and_route_type[[2]]))}
-  #obtain the arrivals by stop_id using arrivals function
-  arrivals_by_stop_id <- gtfssupplyindex::arrivals(
-    gtfs = list_gtfs[[stops_in_or_near_areas_dataframe_and_route_type[[2]]
-    ]],
-    stop_ids = unique(stops_in_or_near_areas_dataframe_and_route_type[[1]]["stop_id"]),
-    date_ymd = date_ymd,
-    start_hms = start_hms,
-    end_hms = end_hms
-  )
   
-  #join number of arrivals per stop to the stops_in_or_near_areas table
-  stops_in_or_near_areas_dataframe_and_route_type[[1]] <- dplyr::left_join(
-    stops_in_or_near_areas_dataframe_and_route_type[[1]], 
-    arrivals_by_stop_id, 
-    by = "stop_id")
+  si_by_area_id <- tibble()
+  
+  # make sure there are some stops within walking distance of the location for the releveant time period
+  if(nrow(stops_in_or_near_areas_dataframe_and_route_type[[1]]) > 0){
+    
+      #obtain the arrivals by stop_id using arrivals function
+      arrivals_by_stop_id <- gtfssupplyindex::arrivals(
+      gtfs = list_gtfs[[stops_in_or_near_areas_dataframe_and_route_type[[2]]
+      ]],
+      stop_ids = unique(stops_in_or_near_areas_dataframe_and_route_type[[1]]["stop_id"]),
+      date_ymd = date_ymd,
+      start_hms = start_hms,
+      end_hms = end_hms
+    )
+  
+    #join number of arrivals per stop to the stops_in_or_near_areas table
+    stops_in_or_near_areas_dataframe_and_route_type[[1]] <- dplyr::left_join(
+      stops_in_or_near_areas_dataframe_and_route_type[[1]], 
+      arrivals_by_stop_id, 
+      by = "stop_id")
 
-#Calculate SI as areas_terms multiplied by the arrivals (SLn)    
-  stops_in_or_near_areas_dataframe_and_route_type[[1]]$SI <- 
-    stops_in_or_near_areas_dataframe_and_route_type[[1]]$area_terms *
-    stops_in_or_near_areas_dataframe_and_route_type[[1]]$arrivals
+    #Calculate SI as areas_terms multiplied by the arrivals (SLn)    
+    stops_in_or_near_areas_dataframe_and_route_type[[1]]$SI <- 
+      stops_in_or_near_areas_dataframe_and_route_type[[1]]$area_terms *
+      stops_in_or_near_areas_dataframe_and_route_type[[1]]$arrivals
 
-#Sum SI for each area_id
-si_by_area_id <- aggregate(
-  stops_in_or_near_areas_dataframe_and_route_type[[1]]$SI,
-  by = list(
-    area_id = stops_in_or_near_areas_dataframe_and_route_type[[1]]$area_id),
-  FUN = sum
-  ) 
-names(si_by_area_id) <- c("area_id", "SI")
-
+    #Sum SI for each area_id
+    si_by_area_id <- aggregate(
+    stops_in_or_near_areas_dataframe_and_route_type[[1]]$SI,
+    by = list(
+      area_id = stops_in_or_near_areas_dataframe_and_route_type[[1]]$area_id),
+    FUN = sum
+    ) 
+  names(si_by_area_id) <- c("area_id", "SI")
+  
+  #close If statement that checks that there are >0 stops within walking distance of an area of interest
+  }
 return(si_by_area_id)
 }
