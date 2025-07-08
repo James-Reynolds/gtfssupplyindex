@@ -1,0 +1,218 @@
+
+---
+title: "Accessibility by and to transit; comparison with transit Supply Index results"
+runningheader: "Reynolds (2025)" # only for pdf output
+author: "James Reynolds"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html:
+    citation_package: natbib
+    latex_engine: xelatex
+bibliography: [packages.bib, References.bib]
+link-citations: yes
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\begin{center}
+    \includegraphics[width=2in,height=2in]{ptrg-logo-s.png}\LARGE\\}
+  - \posttitle{\end{center}}
+
+---
+
+<!--- Header to produce this as a PDF Book instead
+output:
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+    includes:
+      in_header: "preamble.tex"
+bibliography: [packages.bib, References.bib]
+link-citations: yes
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\begin{center}
+    \includegraphics[width=2in,height=2in]{ptrg-logo-s.png}\LARGE\\}
+  - \posttitle{\end{center}}
+--->
+
+
+```{r setup, include=FALSE}
+library(tufte)
+
+library(tidyverse)
+library(tidytransit)
+library(sp)
+library(strayr)
+library(ptinpoly)
+library(magrittr)
+library(ggplot2)
+library(sf)
+library(ASGS.foyer)
+library(raster)
+library(ggmap)
+library(units)
+library(janitor)
+library(mapview)
+library(ggstatsplot)
+library(gtsummary)
+library(moments)
+library(scales)
+library(gtfstools)
+library(lubridate)
+library(kableExtra)
+library(knitr)
+library(readxl)
+library(dplyr)
+library(devtools)
+load_all()
+# invalidate cache when the tufte version changes
+#knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
+```
+
+# Introduction
+ transit Supply Index (SI) 
+has been previous developed [@currie2007identifying], 
+
+Previous 
+development of code to calculate SI scores 
+from GTFS datasets 
+as an R package [@gtfssupplyindex_github]. 
+
+
+The rest of this document 
+is structured as follows: 
+
+
+# Research context
+
+
+## The Suppy Index
+
+```{marginfigure}
+\begin{equation}
+  SI_{area, time} = \sum{\frac{Area_{Bn}}{Area_{area}}*SL_{n, time}}
+  \end{equation}
+```
+
+The Supply Index (SI) equation 
+is shown in the margin figure^[
+Minor adjustments have been made 
+to generalise the equation, 
+as Currie and Senbergs (2007) focus 
+was the context of Melbourne's Census Collection Districts (CCD) 
+and calculations based on a week of transit service. 
+CCDs predate the introduction of 
+Statistical Areas 1, 2, 3, and 4 (SA1, SA2, SA3, SA4), 
+and other geographical divisions 
+currently used by the Australian Bureau of Statistics (ABS), 
+which may be more familiar to readers.], 
+in which:
+(1) $SI_{area, time}$ is the Supply Index for the area of interest 
+and a given period of time;
+(2) $Area_{Bn}$ is the buffer area for each stop (n) within the area of interest. 
+In Currie and Senbergs (2007) this was based on 
+a radius of 400 metres for bus and tram stops, 
+and 800 metres for railway stations;
+(3) $Area_{area}$ is the area of the area of interest; and
+(4) $SL_{n,time}$ is the number of transit arrivals for each stop 
+for a given time period.
+
+
+# Methodology
+R [@R-base], a widely used and readily available  statistical programming language, was adopted for code development. The package development setup and workflow described by @wickham2023r 
+was adopted in this study. 
+
+Various existing packages were relied upon including: the sf package [@R-sf] for geospatial analysis; the tidyverse [@tidyverse2019]; gtfstools [@R-gtfstools]; and tidytransit [@R-tidytransit]. Some code was adapted from the tidytransit, gtfstools and other package's examples, vignettes and other documentation.
+Tidytransit is licensed under GPL-2 | GPL-3, 
+while gtfstools is lincensed under the more permissive MIT license. 
+For simplicity, 
+the gtfssupplyindex package developed here 
+is licensed under GPL-3 
+so as to match tidytransit. 
+
+## Cases
+
+```{r mornington_map, fig.margin = TRUE, fig.cap = "Mornington Penninsula SA1 zones and location of Mornington Tourist Rail stops.", echo = FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+### ---------------- get abs data for Mornington Peninsula
+#options(timeout = 1000)
+#remotes::install_github("wfmackey/absmapsdata")
+
+#get_mornington_sa1 <- function(){
+#  mornington_sa12021 <- absmapsdata::sa12021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa1_code_2021)
+#  sf::st_write(mornington_sa12021, "inst/extdata/mornington_sa12021.geojson", append=FALSE)
+#  return(mornington_sa12021)
+#}
+#get_mornington_sa3 <- function(){
+#  mornington_sa32021 <- absmapsdata::sa32021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa3_code_2021)
+#  sf::st_write(mornington_sa32021, "inst/extdata/mornington_sa32021.geojson", append=FALSE)
+#  return(mornington_sa32021)
+#}
+
+### ---------------- load SA3 abs maps data for just mornington peninsula
+areas_of_interest <- load_areas_of_interest(areas_of_interest = absmapsdata::sa12021 %>% filter(sa3_name_2021 == "Mornington Peninsula") %>% select(sa1_code_2021), 
+  area_id_field = "sa1_code_2021")
+
+# map the areas_of_interest
+map <- areas_of_interest %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geometry))
+#map
+#set the EPSG to transform from lat/lon to metres
+EPSG_for_transform = 28355
+
+### ---------------------------- load and update the route_types in the mornington gtfs data
+mornington_2019 <- tidytransit::read_gtfs("inst/extdata/mornington180109/gtfs.zip")
+#deal with issue to do with missing route_color information
+mornington_2019$routes$route_color <- "Blue"
+#convert route type from 107 (tourist railway) to 2 (rail) ---NEW FEATURE NEEDED --- EXPAND HANDLING OF MODES TO ENABLE CALCULATION OF MODES FROM EXTENDED GTFS LIST
+mornington_2019$routes$route_type <- as.integer(2)
+# write back to zip file
+tidytransit::write_gtfs(mornington_2019, "inst/extdata/mornington180109/gtfs.zip")
+
+#load the revised mornington GTFS data
+list_gtfs = gtfssupplyindex:::gtfs_by_route_type("inst/extdata/mornington180109/gtfs.zip")
+
+stops_as_sf_mornington <-  list_gtfs[[1]]$stops %>% 
+  tidytransit::stops_as_sf()
+
+#map the stops on the ABS data
+map + 
+  geom_sf(data = stops_as_sf_mornington, aes(geometry = geometry))
+
+stops_in_or_near_areas <- gtfssupplyindex:::stops_in_walk_dist(
+  list_gtfs = list_gtfs, 
+  areas_of_interest = areas_of_interest,
+  EPSG_for_transform = 28355
+)
+
+```
+
+Code development was undertaken using a number of cases for testing purposes, being: the  Mornington Penninsula Tourist Railway, and Melbourne. 
+
+
+The Morning Penninsula Tourist Railway runs on Sundays and Wednesdays between Moorooduc and Mornington, with an intermediate stop at Tanti Park^[https://transitfeeds.com/p/mornington-railway/806/latest/stops]. A GTFS feed from 2018 was selected. ABS data was also used, 
+primarily through the strayr 
+and absmapsdata packages [@r-strayr].
+The Mornington Peninsular SA3 zone and the SA1 zones contained within were adopted as the areas_of_interest. 
+
+Larger scale testing was performed using the Victorian GTFS feed, 
+published by Public Transport Victoria (PTV), 
+sourced via @transitfeeds_victoria:2023aa for historical feeds. 
+Again, ABS data was used for the areas_of_interest. 
+
+
+
+# Results
+
+# Discussion and conclusions
+
+
+
+
+# References {#references }
+
+
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib')
+```
+
+
