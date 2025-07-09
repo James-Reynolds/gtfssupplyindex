@@ -5,7 +5,7 @@ runningheader: "Reynolds (2025)" # only for pdf output
 author: "James Reynolds"
 date: "`r Sys.Date()`"
 output:
-  tufte::tufte_html:
+  tufte::tufte_handout:
     citation_package: natbib
     latex_engine: xelatex
 bibliography: [packages.bib, References.bib]
@@ -17,23 +17,6 @@ header-includes:
   - \posttitle{\end{center}}
 
 ---
-
-<!--- Header to produce this as a PDF Book instead
-output:
-  tufte::tufte_book:
-    citation_package: natbib
-    latex_engine: xelatex
-    includes:
-      in_header: "preamble.tex"
-bibliography: [packages.bib, References.bib]
-link-citations: yes
-header-includes:
-  - \usepackage{titling}
-  - \pretitle{\begin{center}
-    \includegraphics[width=2in,height=2in]{ptrg-logo-s.png}\LARGE\\}
-  - \posttitle{\end{center}}
---->
-
 
 ```{r setup, include=FALSE}
 library(tufte)
@@ -69,13 +52,14 @@ load_all()
 ```
 
 # Introduction
- transit Supply Index (SI) 
-has been previous developed [@currie2007identifying], 
-
-Previous 
-development of code to calculate SI scores 
+@currie2007identifying and @currie2010identifying previously developed a 
+transit Supply Index (SI) to compare public transport frequency and coverage between 
+different geographic areas. In subsequent work, @Reynolds:2025aa  
+developed code to calculate SI scores 
 from GTFS datasets 
 as an R package [@gtfssupplyindex_github]. 
+SI scores for all of Victoria for the week starting 27/04/23 were also 
+provided as an input to a forthcoming paper on how transit service levels impact housing prices[@liang5144567exploring]. 
 
 
 The rest of this document 
